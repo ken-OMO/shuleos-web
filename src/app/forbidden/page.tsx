@@ -1,0 +1,3 @@
+import { ShieldX } from "lucide-react";
+import { AccessPageActions } from "@/components/auth/access-page-actions";
+export default function ForbiddenPage() { return <main className="grid min-h-screen place-items-center p-6"><div className="max-w-lg text-center"><span className="mx-auto grid size-14 place-items-center rounded-2xl bg-destructive/10 text-destructive"><ShieldX /></span><p className="mt-7 text-sm font-semibold uppercase tracking-wider text-primary">403 · Access unavailable</p><h1 className="mt-3 text-3xl font-bold">This area isn’t available to your account.</h1><p className="mt-3 text-muted-foreground">Return to your workspace or contact your school administrator if you believe access should be granted.</p><AccessPageActions /></div></main>; }

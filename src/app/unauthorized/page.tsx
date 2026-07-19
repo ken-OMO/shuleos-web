@@ -1,0 +1,3 @@
+import { KeyRound } from "lucide-react";
+import { AccessPageActions } from "@/components/auth/access-page-actions";
+export default function UnauthorizedPage() { return <main className="grid min-h-screen place-items-center p-6"><div className="max-w-lg text-center"><span className="mx-auto grid size-14 place-items-center rounded-2xl bg-amber-500/10 text-amber-700 dark:text-amber-300"><KeyRound /></span><p className="mt-7 text-sm font-semibold uppercase tracking-wider text-primary">Authentication required</p><h1 className="mt-3 text-3xl font-bold">Please sign in again.</h1><p className="mt-3 text-muted-foreground">ShuleOS could not verify an active session. No account or permission details are displayed here.</p><AccessPageActions /></div></main>; }
