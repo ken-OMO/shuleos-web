@@ -1,65 +1,18 @@
-import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, Blocks, Braces, GraduationCap, Layers3, MoonStar, ShieldCheck, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
+
+const foundations = [
+  { icon: ShieldCheck, title: "Secure by foundation", body: "SSR-aware authentication boundaries, normalized API errors and explicit route guards." },
+  { icon: Layers3, title: "Built to scale", body: "Permission-aware navigation, reusable layouts and one central service boundary." },
+  { icon: Sparkles, title: "Designed for focus", body: "Accessible themes, clear hierarchy and calm enterprise-grade visual language." },
+];
 
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+  return <main className="relative min-h-screen overflow-hidden"><div aria-hidden="true" className="absolute inset-x-0 top-0 -z-10 h-[36rem] bg-[radial-gradient(circle_at_20%_10%,color-mix(in_oklch,var(--primary)_18%,transparent),transparent_35%),radial-gradient(circle_at_80%_20%,color-mix(in_oklch,var(--chart-2)_15%,transparent),transparent_30%)]" /><nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8" aria-label="Home navigation"><Link href="/" className="flex items-center gap-3 font-bold"><span className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20"><GraduationCap className="size-5" /></span><span>ShuleOS</span></Link><div className="flex items-center gap-2"><Button nativeButton={false} render={<Link href="/design-system"  />} variant="ghost" className="hidden sm:inline-flex">Design system</Button><ThemeToggle /></div></nav><section className="mx-auto grid max-w-7xl items-center gap-14 px-5 pb-20 pt-16 sm:px-8 lg:grid-cols-[1.1fr_.9fr] lg:py-28"><div><Badge variant="outline" className="mb-6 gap-2 border-primary/20 bg-primary/5 text-primary"><Blocks className="size-3.5" />Frontend foundation Â· Phase 1</Badge><h1 className="max-w-3xl text-4xl font-bold tracking-[-0.04em] sm:text-6xl lg:text-7xl">One calm workspace for the whole school.</h1><p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">ShuleOS is a modern school operating system for teaching, learning, administration and communicationâ€”now with a frontend foundation built for every role.</p><div className="mt-8 flex flex-col gap-3 sm:flex-row"><Button nativeButton={false} size="lg" render={<Link href="/preview"  />}>Explore the shell <ArrowRight /></Button><Button nativeButton={false} size="lg" variant="outline" render={<Link href="/design-system"  />}>View design system</Button></div><div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground"><span className="flex items-center gap-2"><Braces className="size-4 text-primary" />Next.js 16 + React 19</span><span className="flex items-center gap-2"><MoonStar className="size-4 text-primary" />Accessible light & dark themes</span></div></div><Card className="overflow-hidden border-primary/10 bg-card/80 backdrop-blur-xl"><CardContent className="p-3"><div className="rounded-xl border bg-muted/45 p-5"><div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-destructive/70" /><span className="size-2.5 rounded-full bg-amber-400" /><span className="size-2.5 rounded-full bg-emerald-500" /><span className="ml-3 text-xs text-muted-foreground">foundation.shuleos.local</span></div><div className="mt-8 grid gap-3 sm:grid-cols-2"><PreviewMetric label="Learners" value="1,248" accent="bg-primary" /><PreviewMetric label="Attendance" value="96.4%" accent="bg-emerald-500" /><PreviewMetric label="Lessons today" value="42" accent="bg-violet-500" /><PreviewMetric label="Pending approvals" value="7" accent="bg-amber-500" /></div><div className="mt-3 rounded-xl border bg-card p-4"><div className="mb-4 flex items-center justify-between"><p className="text-sm font-semibold">Foundation readiness</p><Badge variant="success">Ready</Badge></div><div className="space-y-3">{["Providers and theme", "API and authentication", "Responsive application shell"].map((item) => <div key={item} className="flex items-center gap-3 text-sm"><span className="size-2 rounded-full bg-emerald-500" />{item}</div>)}</div></div></div></CardContent></Card></section><section className="border-y bg-card/50"><div className="mx-auto grid max-w-7xl gap-5 px-5 py-16 sm:px-8 md:grid-cols-3">{foundations.map((item) => <article key={item.title} className="rounded-2xl border bg-card p-6"><span className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary"><item.icon className="size-5" /></span><h2 className="mt-5 font-semibold">{item.title}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{item.body}</p></article>)}</div></section><footer className="mx-auto flex max-w-7xl flex-col gap-2 px-5 py-10 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-8"><p>ShuleOS frontend foundation</p><p>No live school data is displayed in this preview.</p></footer></main>;
 }
+
+function PreviewMetric({ label, value, accent }: { label: string; value: string; accent: string }) { return <div className="rounded-xl border bg-card p-4"><span className={`mb-3 block h-1 w-8 rounded-full ${accent}`} /><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 text-xl font-bold">{value}</p></div>; }

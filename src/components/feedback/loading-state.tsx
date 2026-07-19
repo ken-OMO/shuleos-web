@@ -1,0 +1,2 @@
+import { LoaderCircle } from "lucide-react";
+export function LoadingState({ label = "Loading" }: { label?: string }) { return <div role="status" className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-xl border border-dashed p-8 text-center text-muted-foreground"><LoaderCircle className="size-6 animate-spin text-primary" /><p className="text-sm font-medium">{label}</p><span className="sr-only">Please wait</span></div>; }
