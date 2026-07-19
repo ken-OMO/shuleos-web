@@ -24,9 +24,9 @@ export function navigationForUser(user: AuthUser | null): NavigationSection[] {
   return navigation.map((section) => ({
     ...section,
     items: section.items.filter((item) => {
-      const roleAllowed = !item.roles?.length || item.roles.some((role) => user?.roles.includes(role));
-      const permissionAllowed = !item.permissions?.length || item.permissions.every((permission) => user?.permissions.includes(permission));
+      const roleAllowed = !item.roles?.length || item.roles.some((role) => user?.roles.some((claim) => claim.name === role));
+      const permissionAllowed = !item.permissions?.length || item.permissions.every((permission) => user?.permissions.some((claim) => claim.name === permission));
       return roleAllowed && permissionAllowed;
-    }),
+    }).map((item) => user ? { ...item, href: item.href.replace("/preview", "/workspace") } : item),
   })).filter((section) => section.items.length > 0);
 }
