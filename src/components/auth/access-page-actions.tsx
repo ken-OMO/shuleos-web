@@ -11,5 +11,5 @@ export function AccessPageActions() {
   const { logout, isAuthenticated } = useAuth();
   const router = useRouter();
   const signOut = async () => { await logout(); toast.success("Signed out securely."); router.replace("/login"); };
-  return <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row"><Button variant="outline" render={<Link href={isAuthenticated ? "/workspace" : "/login"} />}>{isAuthenticated ? "Return to workspace" : "Go to sign in"}</Button>{isAuthenticated ? <Button onClick={signOut}><LogOut />Sign out</Button> : null}</div>;
+  return <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row"><Button variant="outline" nativeButton={false} render={<Link href={isAuthenticated ? "/workspace" : "/login"} />}>{isAuthenticated ? "Return to workspace" : "Go to sign in"}</Button>{isAuthenticated ? <Button onClick={signOut}><LogOut />Sign out</Button> : null}</div>;
 }
