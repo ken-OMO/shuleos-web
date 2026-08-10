@@ -1,0 +1,2 @@
+import type { UnknownRecord } from "../../dashboard/dashboard-contract.ts";
+export interface LearnerDashboard { learner: UnknownRecord; academicContext: UnknownRecord; timetable: UnknownRecord[]; homeworkDue: UnknownRecord[]; overdueHomework: UnknownRecord[]; tasks: UnknownRecord[]; unreadNotifications: number | null; announcements: UnknownRecord[]; latestResult: UnknownRecord; attendance: UnknownRecord; offlineResources: number | null; lastRefreshedAt: string | null }

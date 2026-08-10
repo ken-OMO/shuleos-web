@@ -1,4 +1,4 @@
-import { BookOpen } from "lucide-react";
+import { PermissionGuard } from "@/components/auth/permission-guard";
 import { RoleGuard } from "@/components/auth/role-guard";
-import { WorkspacePlaceholder } from "@/components/auth/workspace-placeholder";
-export default function TeacherWorkspacePage() { return <RoleGuard roles="Teacher"><WorkspacePlaceholder title="Teacher workspace" description="Teaching workflows and classroom information will be implemented in a later frontend phase." icon={BookOpen} /></RoleGuard>; }
+import { TeacherDashboardView } from "@/features/dashboard/components/role-dashboards";
+export default function TeacherWorkspacePage() { return <RoleGuard roles="Teacher"><PermissionGuard permissions="access_teacher_portal"><TeacherDashboardView /></PermissionGuard></RoleGuard>; }

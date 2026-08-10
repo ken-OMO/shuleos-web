@@ -2,19 +2,15 @@ export type AuthStatus = "idle" | "hydrating" | "authenticated" | "guest" | "exp
 
 export interface AuthSchool {
   id: string;
-  name?: string;
-  code?: string;
-  lifecycleState?: string;
-}
-
-export interface AuthRole {
-  id: string;
-  name?: string;
-}
-
-export interface AuthPermission {
   name: string;
+  shortName?: string;
+  status: string;
+  timezone: string;
+  locale: string;
 }
+
+export interface AuthRole { name: string }
+export interface AuthPermission { name: string }
 
 export interface AuthUser {
   id: string;
@@ -23,57 +19,43 @@ export interface AuthUser {
   lastName: string;
   displayName: string;
   email?: string;
+  status: string;
   school: AuthSchool;
-  primaryRoleId: string;
   roles: AuthRole[];
   permissions: AuthPermission[];
   passwordResetRequired: boolean;
+  account: { active: boolean; locked: boolean; requiresPasswordReset: boolean };
 }
 
-export interface LoginCredentials {
-  username: string;
-  password: string;
-}
+export interface LoginCredentials { username: string; password: string }
 
 export interface BackendAuthUser {
   id: string;
-  username: string;
+  name: string;
   first_name: string;
   last_name: string;
+  username: string;
   email?: string | null;
+  status: string;
   school_id: string;
-  role_id: string;
-  password_reset_required?: boolean;
-  role?: { id: string; role_name: string } | null;
-  roles?: Array<{ id: string; role_name: string }>;
-  permissions?: Array<string | { permission_name: string }>;
-  school?: { id: string; school_name: string; school_code?: string | null; lifecycle_state?: string | null } | null;
+  school: {
+    id: string;
+    name: string;
+    short_name?: string | null;
+    status: string;
+    timezone: string;
+    locale: string;
+  };
+  roles: string[];
+  permissions: string[];
+  password_reset_required: boolean;
+  account: { active: boolean; locked: boolean; requires_password_reset: boolean };
 }
 
-export interface LoginResponse {
-  success: true;
-  token: string;
-  user: BackendAuthUser;
-}
-
-export interface AuthMeResponse {
-  success: true;
-  user: BackendAuthUser;
-}
-
-export interface RefreshResponse {
-  success: true;
-  token: string;
-}
-
-export interface LogoutResponse {
-  success: true;
-  message: string;
-}
-
-export interface AuthSession {
-  user: AuthUser;
-  accessToken: string;
-}
-
+interface TokenData { user: BackendAuthUser; token: string; token_type: "bearer"; expires_in: number }
+export interface LoginResponse { success: true; token: string; user: BackendAuthUser; data: TokenData }
+export interface AuthMeResponse { success: true; user: BackendAuthUser; data: { user: BackendAuthUser } }
+export interface RefreshResponse { success: true; token: string; user: BackendAuthUser; data: TokenData }
+export interface LogoutResponse { success: true; message: string }
+export interface AuthSession { user: AuthUser; accessToken: string }
 export type AuthErrorKind = "validation" | "unauthenticated" | "forbidden" | "account_unavailable" | "network" | "server" | "unknown";

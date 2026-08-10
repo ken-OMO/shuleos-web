@@ -1,0 +1,2 @@
+import type { UnknownRecord } from "../../dashboard/dashboard-contract.ts";
+export interface ParentDashboard { parent: UnknownRecord; children: UnknownRecord[]; selectedChild: UnknownRecord; feeBalance: number | null; attendance: UnknownRecord; outstandingHomework: number | null; unreadNotifications: number | null; announcements: UnknownRecord[]; tasks: UnknownRecord[]; taskCount: number | null; consentRequests: number | null; lastRefreshedAt: string | null }

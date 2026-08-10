@@ -1,4 +1,4 @@
-import { UsersRound } from "lucide-react";
+import { PermissionGuard } from "@/components/auth/permission-guard";
 import { RoleGuard } from "@/components/auth/role-guard";
-import { WorkspacePlaceholder } from "@/components/auth/workspace-placeholder";
-export default function ParentWorkspacePage() { return <RoleGuard roles="Parent"><WorkspacePlaceholder title="Parent workspace" description="Linked learner information and parent services will be implemented in a later frontend phase." icon={UsersRound} /></RoleGuard>; }
+import { ParentDashboardView } from "@/features/dashboard/components/role-dashboards";
+export default function ParentWorkspacePage() { return <RoleGuard roles="Parent"><PermissionGuard permissions="access_parent_portal_phase_two"><ParentDashboardView /></PermissionGuard></RoleGuard>; }

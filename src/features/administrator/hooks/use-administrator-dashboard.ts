@@ -1,0 +1,28 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "@/store/auth-store";
+import { dashboardRetry } from "../../dashboard/dashboard-contract";
+import { dashboardQueryKeys } from "../../dashboard/dashboard-query-keys";
+import { administratorDashboardService } from "../services/administrator-dashboard-service";
+
+export function useAdministratorDashboard(scope: "school" | "platform") {
+  const permission = scope === "platform" ? "view_platform_dashboard" : "view_admin_dashboard";
+  const enabled = useAuthStore((state) => state.status === "authenticated" && state.hasPermission(permission));
+  return useQuery({ queryKey: dashboardQueryKeys.administrator.dashboard(scope), queryFn: ({ signal }) => administratorDashboardService.dashboard(scope, signal), enabled, staleTime: 60_000, retry: dashboardRetry });
+}
+
+export function useAdministratorTasks() {
+  const enabled = useAuthStore((state) => state.status === "authenticated" && state.hasPermission("view_admin_tasks"));
+  return useQuery({ queryKey: dashboardQueryKeys.administrator.tasks, queryFn: ({ signal }) => administratorDashboardService.tasks(signal), enabled, staleTime: 60_000, retry: dashboardRetry });
+}
+
+export function useAdministratorAlerts() {
+  const enabled = useAuthStore((state) => state.status === "authenticated" && state.hasPermission("view_admin_alerts"));
+  return useQuery({ queryKey: dashboardQueryKeys.administrator.alerts, queryFn: ({ signal }) => administratorDashboardService.alerts(signal), enabled, staleTime: 60_000, retry: dashboardRetry });
+}
+
+export function useAdministratorPreferences() {
+  const enabled = useAuthStore((state) => state.status === "authenticated" && state.hasPermission("manage_admin_preferences"));
+  return useQuery({ queryKey: dashboardQueryKeys.administrator.preferences, queryFn: ({ signal }) => administratorDashboardService.preferences(signal), enabled, staleTime: 300_000, retry: dashboardRetry });
+}
