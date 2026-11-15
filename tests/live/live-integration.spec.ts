@@ -7,7 +7,7 @@ interface School {
   learnerId: string; unlinkedLearnerId: string; assignmentId: string;
 }
 interface Fixtures { password: string; schools: Record<"Alpha" | "Beta", School> }
-const fixtures = JSON.parse(readFileSync(new URL("./fixtures.json", import.meta.url), "utf8")) as Fixtures;
+const fixtures = JSON.parse(readFileSync("tests/live/fixtures.json", "utf8")) as Fixtures;
 const api = "http://127.0.0.1:8000/api";
 test.beforeEach(() => {
   // Test-only CLI; guarded by APP_ENV, DB name/host, mail/cache settings and no config cache.
