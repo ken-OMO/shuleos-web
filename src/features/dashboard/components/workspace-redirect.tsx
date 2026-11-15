@@ -8,7 +8,7 @@ import { useAuthStore } from "@/store/auth-store";
 
 export function WorkspaceRedirect() {
   const router = useRouter();
-  const roles = useAuthStore((state) => state.roles.map((role) => role.name));
-  useEffect(() => { router.replace(workspacePathForRoles(roles)); }, [roles, router]);
+  const roles = useAuthStore((state) => state.roles);
+  useEffect(() => { router.replace(workspacePathForRoles(roles.map((role) => role.name))); }, [roles, router]);
   return <LoadingState label="Opening your workspace" />;
 }
