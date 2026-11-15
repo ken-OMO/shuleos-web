@@ -30,26 +30,30 @@ async function signOut(page: Page) {
   await expect(page).toHaveURL(/\/login/);
 }
 const roleCases = [
-  { role: "teacher", path: "/workspace/teacher", endpoint: "/teacher/dashboard", title: "Teaching workspace" },
-  { role: "admin", path: "/workspace/admin/school", endpoint: "/admin/dashboard/school", title: "School administration" },
-  { role: "leadership", path: "/workspace/leadership", endpoint: "/leadership/dashboard/principal", title: "Principal dashboard" },
-  { role: "parent", path: "/workspace/parent", endpoint: "/parent/dashboard", title: "Family workspace" },
-  { role: "learner", path: "/workspace/learner", endpoint: "/learner/dashboard", title: "Learning workspace" },
+  { role: "teacher", path: "/workspace/teacher", endpoint: "/teacher/dashboard", title: "Teaching workspace", permissions: ["access_teacher_portal"] },
+  { role: "admin", path: "/workspace/admin/school", endpoint: "/admin/dashboard/school", title: "School administration", permissions: ["view_admin_dashboard"] },
+  { role: "leadership", path: "/workspace/leadership", endpoint: "/leadership/dashboard/principal", title: "Principal dashboard", permissions: ["access_leadership_portal_phase_two", "view_principal_dashboard"] },
+  { role: "parent", path: "/workspace/parent", endpoint: "/parent/dashboard", title: "Family workspace", permissions: ["access_parent_portal_phase_two"] },
+  { role: "learner", path: "/workspace/learner", endpoint: "/learner/dashboard", title: "Learning workspace", permissions: ["access_learner_portal_phase_two"] },
 ];
-for (const { role, path, endpoint, title } of roleCases) {
+for (const { role, path, endpoint, title, permissions } of roleCases) {
   test(`real ${role}: Alpha login → dashboard → logout → Beta switch`, async ({ page, request }) => {
     let previousToken: string | undefined;
+    let dashboardStatus: number | undefined;
+    page.on("response", response => { if (response.url().split("?")[0] === `${api}${endpoint}`) dashboardStatus = response.status(); });
     for (const name of ["Alpha", "Beta"] as const) {
       const school = fixtures.schools[name];
       await page.goto("/login");
       await page.getByLabel("Username", { exact: true }).fill(school.users[role].username);
       await page.getByLabel("Password", { exact: true }).fill(fixtures.password);
       const login = page.waitForResponse(r => r.url() === `${api}/auth/login`);
-      const dashboard = page.waitForResponse(r => r.url().split("?")[0] === `${api}${endpoint}`);
+      dashboardStatus = undefined;
       await page.getByRole("button", { name: "Sign in", exact: true }).click();
       const loggedIn = await login; expect(loggedIn.status()).toBe(200);
-      const token = (await loggedIn.json()).token;
-      expect((await dashboard).status(), `Real ${name} ${endpoint}`).toBe(200);
+      const context = await loggedIn.json();
+      for (const permission of permissions) expect(context.data.user.permissions, `${name} ${role} must receive ${permission} from Laravel`).toContain(permission);
+      const token = context.token;
+      await expect.poll(() => dashboardStatus, { message: `Real ${name} ${endpoint}` }).toBe(200);
       await expect(page).toHaveURL(new RegExp(`${path}$`));
       await expect(page.getByRole("heading", { name: title, exact: true })).toBeVisible();
       await expect(page.locator("header").first()).toContainText(school.name);

@@ -41,6 +41,18 @@ if (($argv[1] ?? '') === 'reset-cache') {
 if (DB::table('schools')->exists()) {
     throw new RuntimeException('Fixture creation requires a freshly migrated empty-school database.');
 }
+$required = [
+    'Teacher' => ['access_teacher_portal', 'view_own_teacher_assignments'],
+    'School Admin' => ['view_admin_dashboard'],
+    'Principal' => ['access_leadership_portal_phase_two', 'view_principal_dashboard'],
+    'Parent' => ['access_parent_portal_phase_two', 'view_linked_learners'],
+    'Learner' => ['access_learner_portal_phase_two'],
+];
+foreach ($required as $roleName => $permissions) {
+    $role = DB::table('roles')->where('role_name', $roleName)->first();
+    $granted = $role ? DB::table('role_permissions')->join('permissions', 'permissions.id', '=', 'role_permissions.permission_id')->where('role_id', $role->id)->pluck('permission_name')->all() : [];
+    echo 'Baseline role grant check: '.json_encode(['role' => $roleName, 'missing' => array_values(array_diff($permissions, $granted))], JSON_THROW_ON_ERROR)."\n";
+}
 $fixture = ['password' => 'Fixture#'.bin2hex(random_bytes(12)), 'schools' => []];
 foreach (['Alpha', 'Beta'] as $name) {
     $school = SchoolBuilder::create([
