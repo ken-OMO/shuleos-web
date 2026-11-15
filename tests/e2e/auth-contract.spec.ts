@@ -80,7 +80,7 @@ test("platform OTP login accepts school null and reaches platform dashboard", as
 test("school HTTP 202 stays unauthenticated through invalid OTP then activates", async ({ page }) => {
   const requests = await api(page); await page.goto("/login"); await login(page, "Activate");
   await page.getByLabel("Verification code").fill("000000"); await page.getByRole("button", { name: "Verify code" }).click();
-  await expect(page.getByRole("alert")).toContainText("Verification failed");
+  await expect(page.getByText("Your credentials or session could not be verified.", { exact: true })).toBeVisible();
   await page.getByLabel("Verification code").fill("123456"); await page.getByRole("button", { name: "Verify code" }).click();
   await expect(page.getByRole("heading", { name: "Activate your password" })).toBeVisible();
   expect(requests.some(r => r.path === "/auth/me")).toBe(false);
