@@ -1,6 +1,20 @@
 # Live two-school integration verification
 
-Date: 15 November 2026. Release gate: **BLOCKED**. PR #1 remains a draft. No business workflows added, no merge or deployment performed.
+Date: 15 November 2026. The scoped live integration gate **PASSED** against backend candidate `4ead486ea2b240e0266ed21538ea67f695128654` and frontend `d1d8fcf8c4c83019ac5c0d922f43c221f315c2fc`. Both PR #1 (web) and #87 (API) remain drafts. No business workflows, merge or deployment.
+
+## Successful candidate verification
+
+Real Laravel/PostgreSQL CI: https://github.com/ken-OMO/shuleos-web/actions/runs/43718176219 — **9 tests passed**. All five role journeys passed in Alpha and Beta: teacher, school administrator, Principal, parent and learner. Logout revokes both `/auth/me` and refresh access; school switching does not show previous-school data. Teacher assignment and administrator user-record positive controls succeed, reciprocal foreign-school IDs are denied, parent linked-child access succeeds while unlinked/foreign children are denied, and refresh/anonymous checks pass. The fixture adds no permissions. All required baseline grant diagnostics are empty.
+
+Fresh and existing PostgreSQL candidate checks: https://github.com/ken-OMO/shuleos-api/actions/runs/43718172107 — **23 tests / 203 assertions per database state**, plus an existing-state CLI probe preserving existing rows and a legitimate prior grant while adding exactly fourteen missing role/permission pairs; rerun is a no-op.
+
+The backend repair adds fifteen explicit pairs to active global system roles only. Principal/Headteacher receive the legacy module-entry permission, phase-two entry and four read-only dashboard permissions (principal dashboard, KPIs, action queue and alerts). Teacher receives own-assignment read access; Parent/Learner receive their portal-entry grants. No test-only grant, fixture override, guard removal or broad permission replay was used.
+
+This proves only the exercised paths on the named candidate commits. It does not establish every ERP endpoint, platform OTP/email delivery, production deployment readiness or real-school Elections readiness. Business workflows have not started. Review and merge decisions are separate from this test result.
+
+## Historical failed baseline
+
+The sections below preserve the original failure and diagnosis against main `e5199c420a32d5e371789bc5678fa7f03649a6c4`. They are superseded by the successful candidate results above.
 
 ## Environment and method
 
