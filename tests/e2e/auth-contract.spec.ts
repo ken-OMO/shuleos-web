@@ -67,7 +67,7 @@ test("two schools: login, role dashboard, logout, account switch, no previous da
 
 test("platform OTP login accepts school null and reaches platform dashboard", async ({ page }) => {
   page.on("pageerror", error => console.log("Platform page error:", error.message));
-  const requests = await api(page); await page.goto("/login");
+  const requests = await api(page); await page.goto("/login?redirect=" + encodeURIComponent("/workspace/admin/platform?tab=schools#overview"));
   console.log("Platform login page loaded");
   await page.getByLabel("Account type").selectOption("platform"); await login(page, "Owner");
   console.log("Platform credentials submitted");
@@ -75,7 +75,7 @@ test("platform OTP login accepts school null and reaches platform dashboard", as
   expect(requests.some(r => r.path === "/auth/me")).toBe(false);
   await page.getByLabel("Verification code").fill("123456"); await page.getByRole("button", { name: "Verify code" }).click();
   console.log("Platform OTP submitted");
-  await expect(page).toHaveURL(/\/workspace\/admin\/platform$/);
+  await expect(page).toHaveURL("http://127.0.0.1:3000/workspace/admin/platform?tab=schools#overview");
   await expect(page.getByRole("heading", { name: "Platform overview" })).toBeVisible();
   expect(requests.find(r => r.path === "/platform/auth/login")?.body.identifier).toBe("Owner");
   console.log("Platform dashboard verified; signing out");
@@ -84,7 +84,7 @@ test("platform OTP login accepts school null and reaches platform dashboard", as
 });
 
 test("school HTTP 202 stays unauthenticated through invalid OTP then activates", async ({ page }) => {
-  const requests = await api(page); await page.goto("/login"); await login(page, "Activate");
+  const requests = await api(page); await page.goto("/login?redirect=" + encodeURIComponent("/workspace/teacher?tab=assignments#today")); await login(page, "Activate");
   await page.getByLabel("Verification code").fill("000000"); await page.getByRole("button", { name: "Verify code" }).click();
   await expect(page.getByText("Your credentials or session could not be verified.", { exact: true })).toBeVisible();
   await page.getByLabel("Verification code").fill("123456"); await page.getByRole("button", { name: "Verify code" }).click();
@@ -93,7 +93,7 @@ test("school HTTP 202 stays unauthenticated through invalid OTP then activates",
   await page.getByLabel("New password", { exact: true }).fill("new-password-123");
   await page.getByLabel("Confirm password").fill("new-password-123");
   await page.getByRole("button", { name: "Activate account" }).click();
-  await expect(page).toHaveURL(/\/workspace\/teacher$/);
+  await expect(page).toHaveURL("http://127.0.0.1:3000/workspace/teacher?tab=assignments#today");
   await expect(page.getByText("Activate private assignment")).toBeVisible();
   expect(requests.find(r => r.path === "/auth/first-login/activate")?.body.activation_token).toBe("activation-secret");
   expect(await page.evaluate(() => ({ local: { ...localStorage }, session: { ...sessionStorage } }))).toEqual({ local: {}, session: {} });
@@ -107,3 +107,21 @@ test("cancel and reload discard challenges and never fetch a protected dashboard
   await expect(page.getByLabel("Username", { exact: true })).toBeVisible();
   expect(requests.some(r => r.path.includes("dashboard") || r.path === "/auth/me")).toBe(false);
 });
+
+for (const platform of [true, false]) {
+  test(`${platform ? "OTP" : "activation"} rejects an external redirect and falls back to the role dashboard`, async ({ page }) => {
+    await api(page);
+    await page.goto("/login?redirect=" + encodeURIComponent("https://example.com/untrusted"));
+    if (platform) await page.getByLabel("Account type").selectOption("platform");
+    await login(page, platform ? "Owner" : "Activate");
+    await page.getByLabel("Verification code").fill("123456");
+    await page.getByRole("button", { name: "Verify code" }).click();
+    if (!platform) {
+      await page.getByLabel("New password", { exact: true }).fill("new-password-123");
+      await page.getByLabel("Confirm password").fill("new-password-123");
+      await page.getByRole("button", { name: "Activate account" }).click();
+    }
+    await expect(page).toHaveURL(platform ? /\/workspace\/admin\/platform$/ : /\/workspace\/teacher$/);
+    await expect(page.getByRole("heading", { name: platform ? "Platform overview" : "Teaching workspace", exact: true })).toBeVisible();
+  });
+}

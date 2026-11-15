@@ -55,7 +55,7 @@ export function LoginForm() {
     try {
       const result = await continueChallenge({ otp, password: newPassword, password_confirmation: confirmation });
       setOtp(""); setNewPassword(""); setConfirmation("");
-      if (result.kind === "authenticated") router.replace(authLandingFor(result.session.user));
+      if (result.kind === "authenticated") router.replace(safeInternalRedirect(search.get("redirect"), authLandingFor(result.session.user)));
     } catch (error) { setGeneralError(error instanceof Error ? error.message : "Verification failed."); }
     finally { setBusy(false); }
   }}>
