@@ -64,8 +64,8 @@ jobs:
       - name: Check out pinned public backend
         run: |
           git clone --no-checkout https://github.com/ken-OMO/shuleos-api.git .live-api
-          git -C .live-api checkout --detach aafb03eacc171ab4a8cc0b96219279284c9c0125
-          test "$(git -C .live-api rev-parse HEAD)" = aafb03eacc171ab4a8cc0b96219279284c9c0125
+          git -C .live-api checkout --detach 4ead486ea2b240e0266ed21538ea67f695128654
+          test "$(git -C .live-api rev-parse HEAD)" = 4ead486ea2b240e0266ed21538ea67f695128654
       - name: Install backend and migrate isolated database
         working-directory: .live-api
         run: |
