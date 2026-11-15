@@ -20,7 +20,8 @@ export interface AuthUser {
   displayName: string;
   email?: string;
   status: string;
-  school: AuthSchool;
+  scope: "school" | "platform";
+  school: AuthSchool | null;
   roles: AuthRole[];
   permissions: AuthPermission[];
   passwordResetRequired: boolean;
@@ -37,7 +38,8 @@ export interface BackendAuthUser {
   username: string;
   email?: string | null;
   status: string;
-  school_id: string;
+  scope: "school" | "platform";
+  school_id: string | null;
   school: {
     id: string;
     name: string;
@@ -45,7 +47,7 @@ export interface BackendAuthUser {
     status: string;
     timezone: string;
     locale: string;
-  };
+  } | null;
   roles: string[];
   permissions: string[];
   password_reset_required: boolean;
@@ -59,3 +61,13 @@ export interface RefreshResponse { success: true; token: string; user: BackendAu
 export interface LogoutResponse { success: true; message: string }
 export interface AuthSession { user: AuthUser; accessToken: string }
 export type AuthErrorKind = "validation" | "unauthenticated" | "forbidden" | "account_unavailable" | "network" | "server" | "unknown";
+
+export type SignInScope = "school" | "platform";
+export interface AuthChallenge {
+  kind: "otp" | "activation";
+  scope: SignInScope;
+  challengeId: string;
+  secret: string;
+  expiresAt: number;
+}
+export type SignInResult = { kind: "authenticated"; session: AuthSession } | { kind: "challenge"; challenge: AuthChallenge };

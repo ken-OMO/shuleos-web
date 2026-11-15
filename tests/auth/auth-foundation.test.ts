@@ -9,7 +9,7 @@ import type { AuthUser } from "../../src/types/auth.ts";
 function userWithRole(name?: string): AuthUser {
   return {
     id: "user-1", username: "operator", firstName: "Test", lastName: "Operator", displayName: "Test Operator",
-    school: { id: "school-1", name: "Test School", status: "active", timezone: "Africa/Nairobi", locale: "en" },
+    scope: "school", school: { id: "school-1", name: "Test School", status: "active", timezone: "Africa/Nairobi", locale: "en" },
     roles: name ? [{ name }] : [], permissions: [], passwordResetRequired: false, status: "active",
     account: { active: true, locked: false, requiresPasswordReset: false },
   };
