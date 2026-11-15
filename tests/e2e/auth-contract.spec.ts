@@ -66,15 +66,21 @@ test("two schools: login, role dashboard, logout, account switch, no previous da
 });
 
 test("platform OTP login accepts school null and reaches platform dashboard", async ({ page }) => {
+  page.on("pageerror", error => console.log("Platform page error:", error.message));
   const requests = await api(page); await page.goto("/login");
+  console.log("Platform login page loaded");
   await page.getByLabel("Account type").selectOption("platform"); await login(page, "Owner");
+  console.log("Platform credentials submitted");
   await expect(page.getByRole("heading", { name: "Verify your account" })).toBeVisible();
   expect(requests.some(r => r.path === "/auth/me")).toBe(false);
   await page.getByLabel("Verification code").fill("123456"); await page.getByRole("button", { name: "Verify code" }).click();
+  console.log("Platform OTP submitted");
   await expect(page).toHaveURL(/\/workspace\/admin\/platform$/);
   await expect(page.getByRole("heading", { name: "Platform overview" })).toBeVisible();
   expect(requests.find(r => r.path === "/platform/auth/login")?.body.identifier).toBe("Owner");
+  console.log("Platform dashboard verified; signing out");
   await logout(page);
+  console.log("Platform signed out");
 });
 
 test("school HTTP 202 stays unauthenticated through invalid OTP then activates", async ({ page }) => {

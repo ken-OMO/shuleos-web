@@ -22,3 +22,6 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      - name: Print browser failure context
+        if: failure()
+        run: find test-results -name error-context.md -type f -exec cat {} \; 2>/dev/null || true
