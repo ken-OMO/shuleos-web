@@ -2,6 +2,10 @@
 
 Date: 15 November 2026. The scoped live integration gate **PASSED** against backend candidate `4ead486ea2b240e0266ed21538ea67f695128654` and frontend `d1d8fcf8c4c83019ac5c0d922f43c221f315c2fc`. Both PR #1 (web) and #87 (API) remain drafts. No business workflows, merge or deployment.
 
+## Final-candidate follow-up
+
+The live workflow now pins backend `bf06a480cec04ba99ea0391e43bddfb3b17aa323`, which includes the same least-privilege grants and a schema-correct leadership readiness query. Full regression of the earlier candidate exposed an existing academic-insight path filtering nonexistent child-table school columns. The repair derives paper/result ownership through parent exams and adds a nonzero two-school count/deleted-exam regression. No existing grant is removed to avoid that path. Current final-candidate evidence is maintained in [API PR #87](https://github.com/ken-OMO/shuleos-api/pull/87) and [web PR #1](https://github.com/ken-OMO/shuleos-web/pull/1); the successful earlier scoped run remains recorded below.
+
 ## Successful candidate verification
 
 Real Laravel/PostgreSQL CI: https://github.com/ken-OMO/shuleos-web/actions/runs/43718176219 — **9 tests passed**. All five role journeys passed in Alpha and Beta: teacher, school administrator, Principal, parent and learner. Logout revokes both `/auth/me` and refresh access; school switching does not show previous-school data. Teacher assignment and administrator user-record positive controls succeed, reciprocal foreign-school IDs are denied, parent linked-child access succeeds while unlinked/foreign children are denied, and refresh/anonymous checks pass. The fixture adds no permissions. All required baseline grant diagnostics are empty.
