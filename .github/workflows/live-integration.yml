@@ -1,7 +1,7 @@
 name: Live Laravel PostgreSQL verification
 on:
   push:
-    branches: ['fix/frontend-auth-contract']
+    branches: ['fix/frontend-auth-contract', 'feature/frontend-dashboard-workspace-phase-1', 'verification/frontend-backend-main']
   pull_request:
 concurrency:
   group: live-${{ github.head_ref || github.ref_name }}
@@ -64,8 +64,8 @@ jobs:
       - name: Check out pinned public backend
         run: |
           git clone --no-checkout https://github.com/ken-OMO/shuleos-api.git .live-api
-          git -C .live-api checkout --detach bf06a480cec04ba99ea0391e43bddfb3b17aa323
-          test "$(git -C .live-api rev-parse HEAD)" = bf06a480cec04ba99ea0391e43bddfb3b17aa323
+          git -C .live-api checkout --detach 785d86adffe14ad8d143ae5e2832a597a095dcd8
+          test "$(git -C .live-api rev-parse HEAD)" = 785d86adffe14ad8d143ae5e2832a597a095dcd8
       - name: Install backend and migrate isolated database
         working-directory: .live-api
         run: |
