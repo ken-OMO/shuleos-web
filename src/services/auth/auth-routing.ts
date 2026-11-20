@@ -1,15 +1,16 @@
 import type { AuthUser } from "../../types/auth.ts";
 
 const landingRules = [
-  { roles: ["Platform Owner", "Platform Super Administrator", "School Admin", "Administrator"], path: "/workspace/admin" },
-  { roles: ["Principal", "Deputy Principal", "HOD", "Senior Teacher", "Director"], path: "/workspace/leadership" },
+  { roles: ["Platform Owner", "Platform Super Administrator"], path: "/workspace/admin/platform" },
+  { roles: ["School Admin", "Administrator"], path: "/workspace/admin/school" },
+  { roles: ["Principal", "Headteacher", "Deputy Principal", "Deputy Headteacher", "HOD", "Senior Teacher", "Director", "School Owner", "Finance Officer", "Finance Manager", "Examination Officer", "Discipline Lead", "Timetable Manager"], path: "/workspace/leadership" },
   { roles: ["Teacher"], path: "/workspace/teacher" },
   { roles: ["Parent"], path: "/workspace/parent" },
   { roles: ["Learner"], path: "/workspace/learner" },
 ] as const;
 
 export function authLandingFor(user: AuthUser): string {
-  const names = new Set(user.roles.flatMap((role) => role.name ? [role.name.toLowerCase()] : []));
+  const names = new Set(user.roles.map((role) => role.name.toLowerCase()));
   return landingRules.find((rule) => rule.roles.some((role) => names.has(role.toLowerCase())))?.path ?? "/workspace";
 }
 

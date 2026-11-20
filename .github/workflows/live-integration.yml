@@ -1,0 +1,111 @@
+name: Live Laravel PostgreSQL verification
+on:
+  push:
+    branches: ['fix/frontend-auth-contract']
+  pull_request:
+concurrency:
+  group: live-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  live-two-schools:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: shuleos_live
+          POSTGRES_PASSWORD: isolated-test-only
+          POSTGRES_DB: shuleos_live_integration_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U shuleos_live -d shuleos_live_integration_test"
+          --health-interval=5s --health-timeout=5s --health-retries=10
+    env:
+      SHULEOS_API_ROOT: ${{ github.workspace }}/.live-api
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: shuleos_live_integration_test
+      DB_USERNAME: shuleos_live
+      DB_PASSWORD: isolated-test-only
+      DB_URL: ''
+      DATABASE_URL: ''
+      CACHE_STORE: file
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      MAIL_MAILER: log
+      LOG_CHANNEL: single
+      BCRYPT_ROUNDS: 4
+      JWT_BLACKLIST_GRACE_PERIOD: 0
+      JWT_SECRET: synthetic-live-integration-only-0123456789abcdef0123456789abcdef
+      BOARDING_REPORTING_SCHEDULER_ENABLED: 'false'
+      TRANSPORT_REPORTING_SCHEDULER_ENABLED: 'false'
+      TRANSPORT_REPORTING_SCHEDULER_ACTORS: '{}'
+      STUDENT_ELECTION_STATIONS_ENABLED: 'false'
+      TELESCOPE_ENABLED: 'false'
+      NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8000/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pgsql, pdo_pgsql, gd
+          coverage: none
+          ini-values: memory_limit=1G
+      - name: Check out pinned public backend
+        run: |
+          git clone --no-checkout https://github.com/ken-OMO/shuleos-api.git .live-api
+          git -C .live-api checkout --detach bf06a480cec04ba99ea0391e43bddfb3b17aa323
+          test "$(git -C .live-api rev-parse HEAD)" = bf06a480cec04ba99ea0391e43bddfb3b17aa323
+      - name: Install backend and migrate isolated database
+        working-directory: .live-api
+        run: |
+          composer install --prefer-dist --no-interaction --no-progress
+          cp .env.example .env
+          php artisan key:generate
+          php artisan migrate --force
+      - name: Seed synthetic schools
+        run: php tests/live/seed.php
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Run real API and browser verification
+        shell: bash
+        run: |
+          (cd .live-api && exec php artisan serve --no-reload --host=127.0.0.1 --port=8000) > /tmp/shuleos-live-http.log 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          ready=false
+          for attempt in $(seq 1 30); do
+            if ! kill -0 "$api_pid" 2>/dev/null; then
+              echo "Laravel server exited before readiness."
+              tail -n 80 /tmp/shuleos-live-http.log
+              exit 1
+            fi
+            if curl --fail --silent --max-time 2 http://127.0.0.1:8000/up > /dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then
+            echo "Laravel server readiness timed out."
+            tail -n 80 /tmp/shuleos-live-http.log
+            exit 1
+          fi
+          npx playwright test --config=playwright.live.config.ts
+      - name: Print Laravel server failure context
+        if: failure()
+        run: tail -n 80 /tmp/shuleos-live-http.log 2>/dev/null || true
+      - name: Print browser failure context (synthetic UI only)
+        if: failure()
+        run: find test-results -name error-context.md -type f -exec cat {} \; 2>/dev/null || true

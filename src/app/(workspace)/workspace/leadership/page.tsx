@@ -1,4 +1,6 @@
-import { ShieldCheck } from "lucide-react";
+import { PermissionGuard } from "@/components/auth/permission-guard";
 import { RoleGuard } from "@/components/auth/role-guard";
-import { WorkspacePlaceholder } from "@/components/auth/workspace-placeholder";
-export default function LeadershipWorkspacePage() { return <RoleGuard roles={["Principal", "Deputy Principal", "HOD", "Senior Teacher", "Director"]}><WorkspacePlaceholder title="Leadership workspace" description="Leadership dashboards and approvals will be implemented in a later frontend phase." icon={ShieldCheck} /></RoleGuard>; }
+import { LeadershipDashboardView } from "@/features/dashboard/components/role-dashboards";
+
+const leadershipRoles = ["Principal", "Headteacher", "Deputy Principal", "Deputy Headteacher", "HOD", "Senior Teacher", "Director", "School Owner", "Finance Officer", "Finance Manager", "Examination Officer", "Discipline Lead", "Timetable Manager"];
+export default function LeadershipWorkspacePage() { return <RoleGuard roles={leadershipRoles}><PermissionGuard permissions="access_leadership_portal_phase_two"><LeadershipDashboardView /></PermissionGuard></RoleGuard>; }

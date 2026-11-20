@@ -23,7 +23,7 @@ export function normalizeApiError(error: unknown): ApiError {
   const backendMessage = payload?.message?.toLowerCase() ?? "";
   const kind: AuthErrorKind = status === 422 ? "validation"
     : status === 401 ? "unauthenticated"
-      : status === 403 && backendMessage.includes("school access") ? "account_unavailable"
+      : status === 403 && (backendMessage.includes("school access") || backendMessage.includes("access is unavailable")) ? "account_unavailable"
         : status === 403 ? "forbidden"
           : !error.response ? "network"
             : status !== null && status >= 500 ? "server" : "unknown";

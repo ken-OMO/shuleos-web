@@ -5,6 +5,7 @@ export interface NavigationItem {
   href: string;
   icon: LucideIcon;
   badge?: string;
+  absolute?: boolean;
   roles?: string[];
   permissions?: string[];
   children?: NavigationItem[];

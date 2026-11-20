@@ -9,8 +9,9 @@ import type { AuthUser } from "../../src/types/auth.ts";
 function userWithRole(name?: string): AuthUser {
   return {
     id: "user-1", username: "operator", firstName: "Test", lastName: "Operator", displayName: "Test Operator",
-    school: { id: "school-1" }, primaryRoleId: "role-1", roles: [{ id: "role-1", ...(name ? { name } : {}) }],
-    permissions: [], passwordResetRequired: false,
+    scope: "school", school: { id: "school-1", name: "Test School", status: "active", timezone: "Africa/Nairobi", locale: "en" },
+    roles: name ? [{ name }] : [], permissions: [], passwordResetRequired: false, status: "active",
+    account: { active: true, locked: false, requiresPasswordReset: false },
   };
 }
 
@@ -20,7 +21,8 @@ test("login schema matches backend username and password contract", () => {
 });
 
 test("role routing is deterministic and fails closed without role names", () => {
-  assert.equal(authLandingFor(userWithRole("Platform Owner")), "/workspace/admin");
+  assert.equal(authLandingFor(userWithRole("Platform Owner")), "/workspace/admin/platform");
+  assert.equal(authLandingFor(userWithRole("School Admin")), "/workspace/admin/school");
   assert.equal(authLandingFor(userWithRole("Teacher")), "/workspace/teacher");
   assert.equal(authLandingFor(userWithRole()), "/workspace");
 });
