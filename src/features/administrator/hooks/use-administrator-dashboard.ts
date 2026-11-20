@@ -14,13 +14,15 @@ export function useAdministratorDashboard(scope: "school" | "platform") {
 }
 
 export function useAdministratorTasks() {
+  const scope = useAuthStore((state) => state.user?.scope === "platform" ? "platform" : "school");
   const enabled = useAuthStore((state) => state.status === "authenticated" && state.hasPermission("view_admin_tasks"));
-  return useQuery({ queryKey: useScopedQueryKey(dashboardQueryKeys.administrator.tasks), queryFn: ({ signal }) => administratorDashboardService.tasks(signal), enabled, staleTime: 60_000, retry: dashboardRetry });
+  return useQuery({ queryKey: useScopedQueryKey([...dashboardQueryKeys.administrator.tasks, scope]), queryFn: ({ signal }) => administratorDashboardService.tasks(signal, scope), enabled, staleTime: 60_000, retry: dashboardRetry });
 }
 
 export function useAdministratorAlerts() {
+  const scope = useAuthStore((state) => state.user?.scope === "platform" ? "platform" : "school");
   const enabled = useAuthStore((state) => state.status === "authenticated" && state.hasPermission("view_admin_alerts"));
-  return useQuery({ queryKey: useScopedQueryKey(dashboardQueryKeys.administrator.alerts), queryFn: ({ signal }) => administratorDashboardService.alerts(signal), enabled, staleTime: 60_000, retry: dashboardRetry });
+  return useQuery({ queryKey: useScopedQueryKey([...dashboardQueryKeys.administrator.alerts, scope]), queryFn: ({ signal }) => administratorDashboardService.alerts(signal, scope), enabled, staleTime: 60_000, retry: dashboardRetry });
 }
 
 export function useAdministratorPreferences() {

@@ -1,6 +1,7 @@
 import { apiClient } from "@/services/api/api-client";
 import type { ApiEnvelope, UnknownRecord } from "../../dashboard/dashboard-contract";
 import { asRecord, asRecords, nullableNumber, nullableString } from "../../dashboard/dashboard-contract";
+import { administratorReadEndpoint, type AdministratorReadScope } from "./administrator-read-endpoints";
 import type { AdministratorDashboard } from "../types/dashboard";
 
 function numberMap(value: unknown): Record<string, number> {
@@ -37,7 +38,7 @@ export const administratorDashboardService = {
     const { data } = await apiClient.get<ApiEnvelope<UnknownRecord>>(`/admin/dashboard/${scope}`, { signal });
     return normalizeAdministratorDashboard(data.data);
   },
-  async tasks(signal?: AbortSignal) { return (await apiClient.get<ApiEnvelope<UnknownRecord[]>>("/admin/tasks", { signal })).data.data ?? []; },
-  async alerts(signal?: AbortSignal) { return (await apiClient.get<ApiEnvelope<UnknownRecord[]>>("/admin/alerts", { signal })).data.data ?? []; },
+  async tasks(signal?: AbortSignal, scope: AdministratorReadScope = "school") { return (await apiClient.get<ApiEnvelope<UnknownRecord[]>>(administratorReadEndpoint(scope, "tasks"), { signal })).data.data ?? []; },
+  async alerts(signal?: AbortSignal, scope: AdministratorReadScope = "school") { return (await apiClient.get<ApiEnvelope<UnknownRecord[]>>(administratorReadEndpoint(scope, "alerts"), { signal })).data.data ?? []; },
   async preferences(signal?: AbortSignal) { return (await apiClient.get<ApiEnvelope<UnknownRecord>>("/admin/preferences", { signal })).data.data; },
 };
