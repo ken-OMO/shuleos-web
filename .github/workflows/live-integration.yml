@@ -78,17 +78,34 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      - name: Start real Laravel HTTP server
-        working-directory: .live-api
+      - name: Run real API and browser verification
+        shell: bash
         run: |
-          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/shuleos-live-http.log 2>&1 &
+          (cd .live-api && exec php artisan serve --no-reload --host=127.0.0.1 --port=8000) > /tmp/shuleos-live-http.log 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          ready=false
           for attempt in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:8000/up > /dev/null; then exit 0; fi
+            if ! kill -0 "$api_pid" 2>/dev/null; then
+              echo "Laravel server exited before readiness."
+              tail -n 80 /tmp/shuleos-live-http.log
+              exit 1
+            fi
+            if curl --fail --silent --max-time 2 http://127.0.0.1:8000/up > /dev/null; then
+              ready=true
+              break
+            fi
             sleep 1
           done
-          exit 1
-      - name: Run real API and browser verification
-        run: npx playwright test --config=playwright.live.config.ts
+          if [ "$ready" != true ]; then
+            echo "Laravel server readiness timed out."
+            tail -n 80 /tmp/shuleos-live-http.log
+            exit 1
+          fi
+          npx playwright test --config=playwright.live.config.ts
+      - name: Print Laravel server failure context
+        if: failure()
+        run: tail -n 80 /tmp/shuleos-live-http.log 2>/dev/null || true
       - name: Print browser failure context (synthetic UI only)
         if: failure()
         run: find test-results -name error-context.md -type f -exec cat {} \; 2>/dev/null || true
