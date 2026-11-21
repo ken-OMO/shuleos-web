@@ -8,7 +8,7 @@ const candidates: NavigationItem[] = [
   { title: "Tasks", href: "#tasks", icon: ListTodo, permissions: ["view_admin_tasks"] },
 { title: "Teacher tasks", href: "/workspace/teacher/tasks", icon: ListTodo, roles: ["Teacher"], permissions: ["access_teacher_portal"], absolute: true },
   { title: "Alerts", href: "#alerts", icon: AlertTriangle, permissions: ["view_admin_alerts"] },
-  { title: "School readiness", href: "#readiness", icon: School, permissions: ["view_school_completeness"] },
+  { title: "School readiness", href: "#readiness", icon: School, permissions: ["view_academic_setup_status"] },
   { title: "Platform distribution", href: "#distribution", icon: Building2, permissions: ["view_platform_dashboard"] },
   { title: "Leadership actions", href: "#actions", icon: ClipboardCheck, permissions: ["view_leadership_action_queue"] },
   { title: "Finance oversight", href: "#finance", icon: Landmark, permissions: ["view_finance_oversight"] },
@@ -25,6 +25,7 @@ export function navigationForUser(user: AuthUser | null): NavigationSection[] {
   const roles = new Set(user.roles.map((role) => role.name));
   const permissions = new Set(user.permissions.map((permission) => permission.name));
   const items = candidates
+    .filter((item) => item.href !== "#readiness" || (user.scope === "school" && dashboard === "/workspace/admin/school"))
     .filter((item) => navigationItemVisible(item, [...roles], [...permissions]))
     .map((item) => ({ ...item, href: item.absolute ? item.href : `${dashboard}${item.href}` }));
   return [{ label: "Workspace", items }];

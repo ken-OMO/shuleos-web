@@ -106,6 +106,9 @@ jobs:
       - name: Print Laravel server failure context
         if: failure()
         run: tail -n 80 /tmp/shuleos-live-http.log 2>/dev/null || true
+      - name: Diagnose parent dashboard failure (isolated synthetic fixtures only)
+        if: failure()
+        run: php tests/live/seed.php diagnose-parent-dashboard
       - name: Print browser failure context (synthetic UI only)
         if: failure()
         run: find test-results -name error-context.md -type f -exec cat {} \; 2>/dev/null || true
