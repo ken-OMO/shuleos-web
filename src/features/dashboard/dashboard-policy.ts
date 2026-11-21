@@ -1,9 +1,10 @@
-export type WorkspaceKind = "platform-admin" | "school-admin" | "leadership" | "teacher" | "parent" | "learner" | "generic";
+export type WorkspaceKind = "platform-admin" | "school-admin" | "leadership" | "teacher" | "parent" | "learner" | "office" | "generic";
 
 const rules: Array<{ kind: WorkspaceKind; roles: string[] }> = [
   { kind: "platform-admin", roles: ["Platform Owner", "Platform Super Administrator"] },
-  { kind: "school-admin", roles: ["School Admin", "Administrator"] },
-  { kind: "leadership", roles: ["Principal", "Headteacher", "Deputy Principal", "Deputy Headteacher", "HOD", "Senior Teacher", "Director", "School Owner", "Finance Officer", "Finance Manager", "Examination Officer", "Discipline Lead", "Timetable Manager"] },
+  { kind: "school-admin", roles: ["School Admin", "Administrator", "Director", "School Owner"] },
+  { kind: "leadership", roles: ["Principal", "Headteacher", "Deputy Principal", "Deputy Headteacher", "HOD", "Senior Teacher", "Finance Officer", "Finance Manager", "Examination Officer", "Discipline Lead", "Timetable Manager"] },
+  { kind: "office", roles: ["School Secretary"] },
   { kind: "teacher", roles: ["Teacher"] },
   { kind: "parent", roles: ["Parent"] },
   { kind: "learner", roles: ["Learner"] },
@@ -19,6 +20,7 @@ export function workspacePathForRoles(roleNames: string[]): string {
     "platform-admin": "/workspace/admin/platform",
     "school-admin": "/workspace/admin/school",
     leadership: "/workspace/leadership",
+    office: "/workspace/office",
     teacher: "/workspace/teacher",
     parent: "/workspace/parent",
     learner: "/workspace/learner",
