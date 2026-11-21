@@ -4,6 +4,7 @@ import type { AuthUser } from "@/types/auth";
 import type { NavigationItem, NavigationSection } from "@/types/navigation";
 
 const candidates: NavigationItem[] = [
+  { title: "Invite school users", href: "/workspace/admin/school/users", absolute: true, icon: School, roles: ["School Admin", "Administrator", "Principal", "Headteacher"], permissions: ["access_administrator_portal", "create_school_users", "activate_school_users"] },
   { title: "Dashboard", href: "", icon: LayoutDashboard },
   { title: "School registrations", href: "/workspace/admin/platform/registrations", icon: School, absolute: true, roles: ["Platform Owner", "Platform Super Administrator"], permissions: ["access_administrator_portal", "access_platform_administration", "onboard_schools"] },
   { title: "Schools", href: "/workspace/admin/platform/schools", icon: Building2, absolute: true, roles: ["Platform Owner", "Platform Super Administrator"], permissions: ["access_administrator_portal", "access_platform_administration", "manage_school_lifecycle"] },
@@ -27,6 +28,7 @@ export function navigationForUser(user: AuthUser | null): NavigationSection[] {
   const roles = new Set(user.roles.map((role) => role.name));
   const permissions = new Set(user.permissions.map((permission) => permission.name));
   const items = candidates
+    .filter((item) => item.title !== "Invite school users" || user.scope === "school")
     .filter((item) => !["Schools", "School registrations"].includes(item.title) || user.scope === "platform")
     .filter((item) => item.href !== "#readiness" || (user.scope === "school" && dashboard === "/workspace/admin/school"))
     .filter((item) => navigationItemVisible(item, [...roles], [...permissions]))

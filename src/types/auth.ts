@@ -28,7 +28,7 @@ export interface AuthUser {
   account: { active: boolean; locked: boolean; requiresPasswordReset: boolean };
 }
 
-export interface LoginCredentials { username: string; password: string }
+export interface LoginCredentials { username: string; password: string; school_code?: string }
 
 export interface BackendAuthUser {
   id: string;
@@ -67,6 +67,7 @@ export interface AuthChallenge {
   kind: "otp" | "activation";
   scope: SignInScope;
   challengeId: string;
+  schoolId?: string;
   secret: string;
   expiresAt: number;
 }

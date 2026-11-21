@@ -14,15 +14,19 @@ interface Props {
 export function ActivationPasswordFields({ password, confirmation, onPasswordChange, onConfirmationChange }: Props) {
   const [visible, setVisible] = useState(false);
   const rules = [
-    { label: "Length: 12–128 characters", met: password.length >= 12 && password.length <= 128 },
+    { label: "Length: 16–128 characters", met: password.length >= 16 && password.length <= 128 },
+    { label: "Uppercase letter", met: /[A-Z]/.test(password) },
+    { label: "Lowercase letter", met: /[a-z]/.test(password) },
+    { label: "Number", met: /[0-9]/.test(password) },
+    { label: "Symbol", met: /[^A-Za-z0-9\s]/.test(password) },
     { label: "Passwords match", met: password.length > 0 && confirmation === password },
   ];
 
   return <div className="space-y-4">
     <div className="space-y-2">
       <Label htmlFor="new-password">New password</Label>
-      <Input id="new-password" type={visible ? "text" : "password"} autoComplete="new-password" minLength={12} maxLength={128} aria-describedby="activation-password-help activation-password-checks" value={password} onChange={(event) => onPasswordChange(event.target.value)} required />
-      <p id="activation-password-help" className="text-sm text-muted-foreground">Use at least 12 characters. A memorable phrase is welcome.</p>
+      <Input id="new-password" type={visible ? "text" : "password"} autoComplete="new-password" minLength={16} maxLength={128} aria-describedby="activation-password-help activation-password-checks" value={password} onChange={(event) => onPasswordChange(event.target.value)} required />
+      <p id="activation-password-help" className="text-sm text-muted-foreground">Use at least 16 characters with uppercase and lowercase letters, a number and a symbol.</p>
     </div>
     <div className="space-y-2">
       <Label htmlFor="confirmation">Confirm password</Label>
