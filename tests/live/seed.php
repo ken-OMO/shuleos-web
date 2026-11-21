@@ -38,6 +38,43 @@ if (($argv[1] ?? '') === 'reset-cache') {
     Cache::flush();
     exit(0);
 }
+if (($argv[1] ?? '') === 'diagnose-parent-dashboard') {
+    // Only the guarded, disposable CI database and its generated fixture identities.
+    if (DB::selectOne('SELECT current_database() AS name')->name !== 'shuleos_live_integration_test') {
+        throw new RuntimeException('Unexpected diagnostic database.');
+    }
+    $fixture = json_decode(file_get_contents(__DIR__.'/fixtures.json'), true, 512, JSON_THROW_ON_ERROR);
+    $secrets = array_filter([
+        $fixture['password'] ?? null, config('jwt.secret'), config('app.key'),
+        config('database.connections.pgsql.password'),
+    ], fn ($secret) => is_string($secret) && $secret !== '');
+    foreach (['Alpha', 'Beta'] as $name) {
+        try {
+            $user = App\Models\User::withoutGlobalScopes()
+                ->where('school_id', $fixture['schools'][$name]['id'])
+                ->findOrFail($fixture['schools'][$name]['users']['parent']['id']);
+            Illuminate\Support\Facades\Auth::setUser($user);
+            $data = app(App\Services\ParentPortal\ParentPhaseTwoDashboardService::class)->dashboard($user, null);
+            $request = Illuminate\Http\Request::create('/api/parent/dashboard');
+            $request->setUserResolver(fn () => $user);
+            (new App\Http\Resources\ParentPhaseTwoDashboardResource($data))->resolve($request);
+            echo $name.' parent dashboard diagnostic: service and resource passed.'."\n";
+        } catch (Throwable $error) {
+            for ($depth = 0; $error !== null && $depth < 3; $depth++, $error = $error->getPrevious()) {
+                $message = str_replace(array_values($secrets), '[redacted]', $error->getMessage());
+                $message = substr(preg_replace('/\s+/', ' ', $message), 0, 1200);
+                echo json_encode([
+                    'fixture' => $name, 'exception' => get_class($error),
+                    'source' => str_replace($root.'/', '', $error->getFile()),
+                    'line' => $error->getLine(), 'message' => $message,
+                ], JSON_THROW_ON_ERROR)."\n";
+            }
+        } finally {
+            Illuminate\Support\Facades\Auth::forgetGuards();
+        }
+    }
+    exit(0);
+}
 if (DB::table('schools')->exists()) {
     throw new RuntimeException('Fixture creation requires a freshly migrated empty-school database.');
 }
