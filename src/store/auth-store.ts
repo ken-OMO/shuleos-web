@@ -47,7 +47,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
   login: async (credentials, scope = "school") => {
     const generation = ++authGeneration;
-    set({ ...clearedSnapshot("guest"), challenge: null, status: "hydrating" });
+    set({ ...clearedSnapshot("guest"), challenge: null });
     setApiAccessToken(null);
     await clearAuthenticatedQueryCache();
     if (generation !== authGeneration) throw new Error("Session changed");

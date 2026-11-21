@@ -48,6 +48,36 @@ if (($argv[1] ?? '') === 'diagnose-parent-dashboard') {
         $fixture['password'] ?? null, config('jwt.secret'), config('app.key'),
         config('database.connections.pgsql.password'),
     ], fn ($secret) => is_string($secret) && $secret !== '');
+    $redact = static function (string $line) use ($secrets, $root): string {
+        $line = str_replace(array_values($secrets), '[redacted]', $line);
+        $line = preg_replace('/Bearer\s+\S+/i', 'Bearer [redacted]', $line);
+        $line = preg_replace('/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/', '[redacted-jwt]', $line);
+        $line = str_replace($root, '[backend]', $line);
+        return substr($line, 0, 2000);
+    };
+    // The service-only replay below cannot explain a previous middleware or JSON failure.
+    // Read a bounded tail of the actual HTTP error log, never the entire file or mail log.
+    $log = $root.'/storage/logs/laravel.log';
+    if (is_file($log)) {
+        $handle = fopen($log, 'rb');
+        if ($handle !== false) {
+            try {
+                $size = fstat($handle)['size'];
+                $offset = max(0, $size - 2 * 1024 * 1024);
+                fseek($handle, $offset);
+                if ($offset > 0) { fgets($handle); }
+                $tail = stream_get_contents($handle, 2 * 1024 * 1024);
+                $errors = array_values(array_filter(explode("\n", $tail),
+                    fn ($line) => preg_match('/^\[[^\]]+\] testing\.(ERROR|CRITICAL|ALERT|EMERGENCY): /', $line)));
+                echo 'Isolated HTTP error records: '.count($errors).' (last five shown).' ."\n";
+                foreach (array_slice($errors, -5) as $line) {
+                    echo $redact($line)."\n";
+                }
+            } finally { fclose($handle); }
+        }
+    } else {
+        echo 'No isolated Laravel HTTP error log was written.' ."\n";
+    }
     foreach (['Alpha', 'Beta'] as $name) {
         try {
             $user = App\Models\User::withoutGlobalScopes()
@@ -57,8 +87,10 @@ if (($argv[1] ?? '') === 'diagnose-parent-dashboard') {
             $data = app(App\Services\ParentPortal\ParentPhaseTwoDashboardService::class)->dashboard($user, null);
             $request = Illuminate\Http\Request::create('/api/parent/dashboard');
             $request->setUserResolver(fn () => $user);
-            (new App\Http\Resources\ParentPhaseTwoDashboardResource($data))->resolve($request);
-            echo $name.' parent dashboard diagnostic: service and resource passed.'."\n";
+            $app->instance('request', $request);
+            $response = App\Core\Response\ApiResponder::success(new App\Http\Resources\ParentPhaseTwoDashboardResource($data));
+            json_decode($response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+            echo $name.' parent dashboard diagnostic: service, resource and JSON response passed.'."\n";
         } catch (Throwable $error) {
             for ($depth = 0; $error !== null && $depth < 3; $depth++, $error = $error->getPrevious()) {
                 $message = str_replace(array_values($secrets), '[redacted]', $error->getMessage());
