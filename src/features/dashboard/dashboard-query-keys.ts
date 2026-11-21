@@ -2,6 +2,7 @@
   administrator: {
     dashboard: (scope: "school" | "platform") =>
       ["dashboard", "administrator", scope] as const,
+    schools: (page: number, state: string) => ["dashboard", "administrator", "platform-schools", page, state] as const,
     readiness: ["dashboard", "administrator", "school-readiness"] as const,
     tasks: ["dashboard", "administrator", "tasks"] as const,
     alerts: ["dashboard", "administrator", "alerts"] as const,
