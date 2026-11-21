@@ -4,7 +4,7 @@ import { useAuthStore } from "@/store/auth-store";
 export const invitationPermissions = ["access_administrator_portal", "create_school_users", "activate_school_users"];
 export function canInviteSchoolUsers(state = useAuthStore.getState()) {
   return state.status === "authenticated" && state.user?.scope === "school" && Boolean(state.user.school?.id) &&
-    state.hasAnyRole(["School Admin", "Administrator", "Principal", "Headteacher"]) && invitationPermissions.every(state.hasPermission);
+    state.hasAnyRole(["School Admin", "Administrator", "Director", "School Owner"]) && invitationPermissions.every(state.hasPermission);
 }
 export function invitationSchoolId() {
   if (!canInviteSchoolUsers()) throw new Error("School invitation access is unavailable.");

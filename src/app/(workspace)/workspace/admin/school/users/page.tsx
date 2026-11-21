@@ -4,5 +4,5 @@ import { SchoolUserInvitations } from "@/features/administrator/components/schoo
 import { invitationPermissions } from "@/features/administrator/services/school-user-invitation-service";
 
 export default function SchoolUsersPage() {
-  return <RoleGuard roles={["School Admin", "Administrator", "Principal", "Headteacher"]}><PermissionGuard permissions={invitationPermissions}><SchoolUserInvitations /></PermissionGuard></RoleGuard>;
+  return <RoleGuard roles={["School Admin", "Administrator", "Director", "School Owner"]}><PermissionGuard permissions={invitationPermissions}><SchoolUserInvitations /></PermissionGuard></RoleGuard>;
 }

@@ -2,8 +2,9 @@ import type { AuthUser } from "../../types/auth.ts";
 
 const landingRules = [
   { roles: ["Platform Owner", "Platform Super Administrator"], path: "/workspace/admin/platform" },
-  { roles: ["School Admin", "Administrator"], path: "/workspace/admin/school" },
-  { roles: ["Principal", "Headteacher", "Deputy Principal", "Deputy Headteacher", "HOD", "Senior Teacher", "Director", "School Owner", "Finance Officer", "Finance Manager", "Examination Officer", "Discipline Lead", "Timetable Manager"], path: "/workspace/leadership" },
+  { roles: ["School Admin", "Administrator", "Director", "School Owner"], path: "/workspace/admin/school" },
+  { roles: ["Principal", "Headteacher", "Deputy Principal", "Deputy Headteacher", "HOD", "Senior Teacher", "Finance Officer", "Finance Manager", "Examination Officer", "Discipline Lead", "Timetable Manager"], path: "/workspace/leadership" },
+  { roles: ["School Secretary"], path: "/workspace/office" },
   { roles: ["Teacher"], path: "/workspace/teacher" },
   { roles: ["Parent"], path: "/workspace/parent" },
   { roles: ["Learner"], path: "/workspace/learner" },

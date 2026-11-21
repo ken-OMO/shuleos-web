@@ -4,7 +4,8 @@ import type { AuthUser } from "@/types/auth";
 import type { NavigationItem, NavigationSection } from "@/types/navigation";
 
 const candidates: NavigationItem[] = [
-  { title: "Invite school users", href: "/workspace/admin/school/users", absolute: true, icon: School, roles: ["School Admin", "Administrator", "Principal", "Headteacher"], permissions: ["access_administrator_portal", "create_school_users", "activate_school_users"] },
+  { title: "Invite school users", href: "/workspace/admin/school/users", absolute: true, icon: School, roles: ["School Admin", "Administrator", "Director", "School Owner"], permissions: ["access_administrator_portal", "create_school_users", "activate_school_users"] },
+  { title: "Staff access", href: "/workspace/admin/school/staff-access", absolute: true, icon: UsersRound, roles: ["School Admin", "Administrator", "Director", "School Owner"], permissions: ["access_administrator_portal", "update_school_users", "assign_school_permissions"] },
   { title: "Dashboard", href: "", icon: LayoutDashboard },
   { title: "School registrations", href: "/workspace/admin/platform/registrations", icon: School, absolute: true, roles: ["Platform Owner", "Platform Super Administrator"], permissions: ["access_administrator_portal", "access_platform_administration", "onboard_schools"] },
   { title: "Schools", href: "/workspace/admin/platform/schools", icon: Building2, absolute: true, roles: ["Platform Owner", "Platform Super Administrator"], permissions: ["access_administrator_portal", "access_platform_administration", "manage_school_lifecycle"] },
