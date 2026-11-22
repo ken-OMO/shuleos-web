@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { assertSchool, canManageCalendar, loadGradeSetup } from "@/features/leadership/components/grades-by-education-level";
 import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
@@ -23,21 +24,6 @@ type CalendarEntry = {
   active: boolean;
   yearId?: string;
 };
-
-function canManageCalendar(state: ReturnType<typeof useAuthStore.getState>) {
-  return state.status === "authenticated" && state.user?.scope === "school"
-    && Boolean(state.user.school?.id)
-    && state.hasAnyRole(["Headteacher", "Principal"])
-    && state.hasPermission("access_school_leadership_portal")
-    && state.hasPermission("manage_academics");
-}
-
-function assertSchool(schoolId: string) {
-  const state = useAuthStore.getState();
-  if (!canManageCalendar(state) || state.user?.school?.id !== schoolId) {
-    throw new Error("Academic setup is unavailable.");
-  }
-}
 
 function calendarDate(value: unknown) {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}(?:T|$)/.test(value) ? value.slice(0, 10) : "";
@@ -202,14 +188,6 @@ function CalendarSection({ resource, schoolId, years = [] }: {
       {notice && <p role="status" className="mt-2 text-sm">{notice}</p>}
     </>}
   </DashboardSection>;
-}
-
-async function loadGradeSetup(path: "/grades" | "/grades/education-levels", schoolId: string, signal: AbortSignal) {
-  assertSchool(schoolId);
-  const { data } = await apiClient.get(path, { signal });
-  assertSchool(schoolId);
-  if (data.success !== true || !Array.isArray(data.data)) throw new Error("Grade setup data is unavailable.");
-  return data.data.map(asRecord) as Record<string, unknown>[];
 }
 
 function GradeSetup({ schoolId }: { schoolId: string }) {
