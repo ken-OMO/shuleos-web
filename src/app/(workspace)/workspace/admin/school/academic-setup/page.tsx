@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
+import { ApiError } from "@/services/api/api-error";
 import { DashboardHeader, DashboardPage, DashboardSection } from "@/components/dashboard/dashboard-primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -203,6 +204,112 @@ function CalendarSection({ resource, schoolId, years = [] }: {
   </DashboardSection>;
 }
 
+async function loadGradeSetup(path: "/grades" | "/grades/education-levels", schoolId: string, signal: AbortSignal) {
+  assertSchool(schoolId);
+  const { data } = await apiClient.get(path, { signal });
+  assertSchool(schoolId);
+  if (data.success !== true || !Array.isArray(data.data)) throw new Error("Grade setup data is unavailable.");
+  return data.data.map(asRecord) as Record<string, unknown>[];
+}
+
+function GradeSetup({ schoolId }: { schoolId: string }) {
+  const client = useQueryClient();
+  const gradeKey = useScopedQueryKey(["school", "academic-setup", "grades"]);
+  const levelKey = useScopedQueryKey(["school", "academic-setup", "education-levels"]);
+  const readinessKey = useScopedQueryKey(dashboardQueryKeys.administrator.readiness);
+  const grades = useQuery({
+    queryKey: gradeKey, retry: dashboardRetry,
+    queryFn: ({ signal }) => loadGradeSetup("/grades", schoolId, signal),
+  });
+  const levels = useQuery({
+    queryKey: levelKey, retry: dashboardRetry,
+    queryFn: ({ signal }) => loadGradeSetup("/grades/education-levels", schoolId, signal),
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const options = (levels.data ?? []).flatMap(level =>
+    typeof level.id === "string" && typeof level.level_name === "string"
+      ? [{ id: level.id, name: level.level_name }] : []);
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (saving) return;
+    const target = event.currentTarget;
+    const form = new FormData(target);
+    const name = String(form.get("grade_name") ?? "").trim();
+    if (!name) {
+      setError("Enter a grade name.");
+      return;
+    }
+    const number = String(form.get("grade_number") ?? "");
+    setSaving(true);
+    setError("");
+    setNotice("");
+    try {
+      assertSchool(schoolId);
+      const response = await apiClient.post("/grades", {
+        grade_name: name,
+        education_level_id: String(form.get("education_level_id")),
+        grade_order: Number(form.get("grade_order")),
+        ...(number !== "" ? { grade_number: Number(number) } : {}),
+      });
+      assertSchool(schoolId);
+      if (response.data.success !== true) throw new Error("Grade save unconfirmed.");
+      target.reset();
+      setNotice("Grade saved.");
+      await Promise.all([
+        client.invalidateQueries({ queryKey: gradeKey }),
+        client.invalidateQueries({ queryKey: readinessKey }),
+      ]);
+    } catch (failure) {
+      const validation = failure instanceof ApiError && failure.status === 422
+        ? Object.values(failure.validationErrors).flat().filter((message) => typeof message === "string").join(" ")
+        : "";
+      setError(validation || (failure instanceof ApiError && failure.status === 403
+        ? "Grade changes are unavailable. Check permissions and subscription status."
+        : "The grade save could not be confirmed. Refresh before retrying."));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return <DashboardSection title="Grades">
+    {grades.isPending && <p role="status">Loading grades…</p>}
+    {grades.isError && <p role="alert">Grades could not be loaded. <Button variant="outline" onClick={() => void grades.refetch()}>Retry grades</Button></p>}
+    {grades.isSuccess && (grades.data.length ? <ul className="divide-y">
+      {grades.data.map(grade => <li key={String(grade.id)} className="py-3">
+        <span className="font-medium">{String(grade.grade_name)}</span>{" "}
+        <span className="text-sm text-muted-foreground">{String(asRecord(grade.education_level).level_name ?? "")}{grade.active === false ? " · Inactive" : ""}</span>
+      </li>)}
+    </ul> : <p>No grades yet.</p>)}
+    {levels.isPending && <p role="status">Loading education levels…</p>}
+    {levels.isError && <p role="alert">Education levels could not be loaded. <Button variant="outline" onClick={() => void levels.refetch()}>Retry education levels</Button></p>}
+    {levels.isSuccess && options.length === 0 && <p>No active education levels are available.</p>}
+    {grades.isSuccess && options.length > 0 && <form onSubmit={save} className="mt-4 space-y-3 rounded-lg border p-4">
+      <h3 className="font-semibold">Add grade</h3>
+      <fieldset disabled={saving} className="space-y-3">
+        <label className="grid gap-1 text-sm">Education level
+          <select name="education_level_id" defaultValue="" required className="rounded border bg-background p-2">
+            <option value="" disabled>Select an education level</option>
+            {options.map(level => <option key={level.id} value={level.id}>{level.name}</option>)}
+          </select>
+        </label>
+        <label className="grid gap-1 text-sm">Grade name<Input name="grade_name" maxLength={50} required /></label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="grid gap-1 text-sm">Display order<Input name="grade_order" type="number" min={1} step={1} required /></label>
+          <label className="grid gap-1 text-sm">Grade number (optional)<Input name="grade_number" type="number" min={0} max={12} step={1} />
+            <span className="text-xs text-muted-foreground">Standard names are classified automatically. For custom names, enter 0 for pre-primary or 1–12 for a numbered grade.</span>
+          </label>
+        </div>
+        <Button type="submit">{saving ? "Saving…" : "Save grade"}</Button>
+      </fieldset>
+    </form>}
+    {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+    {notice && <p role="status" className="text-sm">{notice}</p>}
+  </DashboardSection>;
+}
+
 function AcademicCalendar({ schoolId }: { schoolId: string }) {
   const years = useQuery({
     queryKey: useScopedQueryKey(["school", "academic-setup", "academic-years"]),
@@ -212,6 +319,7 @@ function AcademicCalendar({ schoolId }: { schoolId: string }) {
   return <>
     <CalendarSection resource="academic-years" schoolId={schoolId} />
     {years.isSuccess && <CalendarSection resource="terms" schoolId={schoolId} years={years.data} />}
+    <GradeSetup schoolId={schoolId} />
   </>;
 }
 
