@@ -184,7 +184,7 @@ function CalendarSection({ resource, schoolId, years = [] }: {
             </select>
           </label>}
           <label className="grid gap-1 text-sm">{label} name
-            <Input name="name" defaultValue={editing?.name} maxLength={50} required />
+            <Input name="name" defaultValue={editing?.name} maxLength={isTerm ? 50 : 20} required />
           </label>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1 text-sm">Start date<Input type="date" name="start" defaultValue={editing?.start} required /></label>
