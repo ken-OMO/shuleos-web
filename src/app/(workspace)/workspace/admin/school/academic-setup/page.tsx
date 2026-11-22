@@ -340,6 +340,11 @@ function StreamSetup({ schoolId }: { schoolId: string }) {
       setError("Enter a stream name.");
       return;
     }
+    const gradeIds = form.getAll("grade_ids").map(String);
+    if (!editing && gradeIds.length === 0) {
+      setError("Select at least one grade for this stream.");
+      return;
+    }
     setSaving(true);
     try {
       assertSchool(schoolId);
@@ -347,12 +352,12 @@ function StreamSetup({ schoolId }: { schoolId: string }) {
         ? await apiClient.put("/streams/" + encodeURIComponent(String(editing.id)), {
           stream_name: streamName, active: form.get("active") === "on",
         })
-        : await apiClient.post("/streams", { stream_name: streamName, grade_id: form.get("grade_id") });
+        : await apiClient.post("/streams", { stream_name: streamName, grade_ids: gradeIds });
       assertSchool(schoolId);
       if (response.data.success !== true) throw new Error("Stream save unconfirmed.");
       target.reset();
       selectStream(null);
-      setMessage("Stream saved.");
+      setMessage(editing ? "Stream saved." : `Stream added to ${gradeIds.length} ${gradeIds.length === 1 ? "grade" : "grades"}.`);
       await Promise.all([
         client.invalidateQueries({ queryKey: streamKey }),
         client.invalidateQueries({ queryKey: readinessKey }),
@@ -383,13 +388,16 @@ function StreamSetup({ schoolId }: { schoolId: string }) {
     {streams.isSuccess && (editing || activeGrades.length > 0) && <form key={String(editing?.id ?? "new")} onSubmit={save} className="mt-4 space-y-3 rounded-lg border p-4">
       <h3 className="font-semibold">{editing ? "Edit stream" : "Add stream"}</h3>
       <fieldset disabled={saving} className="space-y-3">
-        {editing ? <p className="text-sm">Grade: {String(asRecord(editing.grade).grade_name ?? "Unavailable")}</p> : <label className="grid gap-1 text-sm">Grade
-          <select name="grade_id" defaultValue="" required className="rounded border bg-background p-2">
-            <option value="" disabled>Select a grade</option>
-            {activeGrades.map(grade => <option key={String(grade.id)} value={String(grade.id)}>{String(grade.grade_name)}</option>)}
-          </select>
-        </label>}
-        <label className="grid gap-1 text-sm">Stream name<Input name="stream_name" defaultValue={String(editing?.stream_name ?? "")} maxLength={50} required /></label>
+        <label className="grid gap-1 text-sm">Stream name<Input name="stream_name" placeholder="e.g. M" defaultValue={String(editing?.stream_name ?? "")} maxLength={50} required /></label>
+        {editing ? <p className="text-sm">Grade: {String(asRecord(editing.grade).grade_name ?? "Unavailable")}</p> : <fieldset className="space-y-2">
+          <legend className="text-sm font-medium">Which grades use this stream?</legend>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {activeGrades.map(grade => <label key={String(grade.id)} className="flex items-center gap-2 rounded border p-2 text-sm">
+              <input type="checkbox" name="grade_ids" value={String(grade.id)} />
+              {String(grade.grade_name)}
+            </label>)}
+          </div>
+        </fieldset>}
         {editing && <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="active" defaultChecked={editing.active === true} /> Active</label>}
         <div className="flex gap-2">
           <Button type="submit">{saving ? "Saving…" : "Save stream"}</Button>
