@@ -26,8 +26,8 @@ type CalendarEntry = {
 function canManageCalendar(state: ReturnType<typeof useAuthStore.getState>) {
   return state.status === "authenticated" && state.user?.scope === "school"
     && Boolean(state.user.school?.id)
-    && state.hasAnyRole(["School Admin", "Administrator", "Director", "School Owner"])
-    && state.hasPermission("access_administrator_portal")
+    && state.hasAnyRole(["Headteacher", "Principal"])
+    && state.hasPermission("access_school_leadership_portal")
     && state.hasPermission("manage_academics");
 }
 
@@ -219,8 +219,8 @@ export default function AcademicSetupPage() {
   const allowed = useAuthStore(canManageCalendar);
   const schoolId = useAuthStore((state) => state.user?.school?.id);
   return <DashboardPage>
-    <DashboardHeader title="Academic setup" role="School administrator" description="Manage your school’s academic years and terms." />
-    <Link href="/workspace/admin/school" className="text-sm font-medium text-primary underline">Back to school administration</Link>
+    <DashboardHeader title="Academic setup" role="School leadership" description="Manage your school’s academic years and terms." />
+    <Link href="/workspace/leadership" className="text-sm font-medium text-primary underline">Back to school leadership</Link>
     {allowed && schoolId ? <AcademicCalendar key={schoolId} schoolId={schoolId} /> : <p role="alert">Academic setup access is unavailable.</p>}
   </DashboardPage>;
 }
