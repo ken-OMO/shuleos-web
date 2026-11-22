@@ -2,6 +2,8 @@
 import { teacherAssignmentLabel } from "@/features/teacher/services/teacher-assignment-label";
 
 import { useState } from "react";
+import { canManageStaff } from "@/features/administrator/services/school-staff-access-service";
+import { canInviteSchoolUsers } from "@/features/administrator/services/school-user-invitation-service";
 import { SchoolReadinessSummary } from "@/features/administrator/components/school-readiness-summary";
 import { AlertTriangle, BellRing, BookOpen, Building2, CalendarDays, CheckSquare2, ClipboardCheck, GraduationCap, HeartPulse, ListTodo, School, UsersRound, WalletCards } from "lucide-react";
 import { DashboardAlertList, DashboardEmptyCalendar, DashboardHeader, DashboardHeaderSkeleton, DashboardKpiCard, DashboardKpiGrid, DashboardMobileSummary, DashboardPage, DashboardQuickActions, DashboardSection, DashboardTaskList, DashboardUnavailableState, DashboardWelcomeCard, type QuickAction } from "@/components/dashboard/dashboard-primitives";
@@ -23,12 +25,231 @@ function title(record:UnknownRecord){return String(record.title??record.name??te
 function SimpleItems({items,empty}:{items:UnknownRecord[];empty:string}){if(!items.length)return <DashboardEmptyCalendar message={empty}/>;return <ul className="divide-y">{items.slice(0,10).map((item,index)=><li className="py-3" key={String(item.id??index)}><p className="text-sm font-medium">{title(item)}</p><p className="mt-1 text-xs text-muted-foreground">{String(item.start_time??item.due_at??item.description??item.created_at??(typeof item.ready==="boolean"?`${item.ready?"Ready":"Not ready"}${typeof item.configuration_complete==="boolean"?` · ${item.configuration_complete?"Configuration complete":"Configuration incomplete"}`:""}`:item.status??""))}</p></li>)}</ul>;}
 function useLeadershipView():LeadershipView{const roles=useAuthStore((s)=>s.roles).map((r)=>r.name);if(roles.includes("HOD"))return"hod";if(["Deputy Principal","Deputy Headteacher","Examination Officer","Discipline Lead","Timetable Manager"].some((role)=>roles.includes(role)))return"deputy";if(["Director","School Owner","Finance Officer","Finance Manager"].some((role)=>roles.includes(role)))return"director";return"principal";}
 
-export function AdministratorDashboardView({scope}:{scope:"school"|"platform"}){
-  const query=useAdministratorDashboard(scope);const tasks=useAdministratorTasks();const alerts=useAdministratorAlerts();const preferences=useAdministratorPreferences();
-  if(query.isPending)return <DashboardPage><DashboardHeaderSkeleton/></DashboardPage>;if(query.isError||!query.data)return <DashboardPage><DashboardUnavailableState onRetry={()=>query.refetch()}/></DashboardPage>;
-  const d=query.data;const hidden=Array.isArray(asRecord(preferences.data).dashboard_widgets)?asRecord(preferences.data).dashboard_widgets as string[]:[];const showHealth=asRecord(preferences.data).show_system_health!==false;
-  const actions:QuickAction[]=scope==="platform"?[{title:"View schools",description:"Browse registered schools and lifecycle status.",href:"/workspace/admin/platform/schools",icon:Building2,permission:"manage_school_lifecycle"},{title:"Review platform alerts",description:"Open the current alert summary.",href:"#alerts",icon:AlertTriangle,permission:"view_admin_alerts"},{title:"Review school lifecycle",description:"Inspect the platform distribution.",href:"#distribution",icon:Building2,permission:"manage_school_lifecycle"}]:[{title:"Review setup",description:"Inspect school readiness and missing setup.",href:"#readiness",icon:School,permission:"view_academic_setup_status"},{title:"View alerts",description:"Open the current alert list.",href:"#alerts",icon:AlertTriangle,permission:"view_admin_alerts"},{title:"Open action queue",description:"Review administrative tasks.",href:"#tasks",icon:ListTodo,permission:"view_admin_tasks"},{title:"Review activity",description:"Inspect recent safe audit summaries.",href:"#activity",icon:ClipboardCheck,permission:"view_admin_audit"}];
-  return <DashboardPage><DashboardHeader title={scope==="platform"?"Platform overview":"School administration"} description={scope==="platform"?"Cross-school operational health without exposing school-private records.":"School setup, users, readiness and operational priorities."} role={scope==="platform"?"Platform administrator":"School administrator"} lastRefreshedAt={d.lastRefreshedAt} refreshing={query.isFetching} onRefresh={()=>query.refetch()}/><DashboardWelcomeCard focus={scope==="platform"?"Monitor lifecycle, subscriptions and platform-level exceptions.":"Keep your school configured, secure and ready for daily operations."}/><DashboardMobileSummary items={[{label:scope==="platform"?"Schools":"Learners",value:scope==="platform"?d.totalSchools:d.learnerCount},{label:"Teachers",value:d.teacherCount},{label:"Alerts",value:d.criticalAlerts}]}/><DashboardKpiGrid><DashboardKpiCard label={scope==="platform"?"Schools":"Learners"} value={scope==="platform"?d.totalSchools:d.learnerCount} icon={scope==="platform"?Building2:GraduationCap}/><DashboardKpiCard label="Teachers" value={d.teacherCount} icon={UsersRound}/><DashboardKpiCard label={scope==="platform"?"Failed provisioning":"Pending users"} value={scope==="platform"?null:d.pendingUserActions} icon={CheckSquare2}/><DashboardKpiCard label={scope==="platform"?"Upcoming expiries":"Profile completeness"} value={scope==="platform"?null:d.profileCompleteness===null?null:`${d.profileCompleteness}%`} icon={HeartPulse}/></DashboardKpiGrid><DashboardQuickActions actions={actions}/>{scope==="platform"&&numericData(d.schoolsByLifecycle).length?<div id="distribution"><DashboardBarChart data={numericData(d.schoolsByLifecycle)}/></div>:null}{scope==="school"?<SchoolReadinessSummary/>:null}{scope==="school"&&!hidden.includes("module_readiness")?<DashboardSection id="module-readiness" title="Module readiness" description="Only readiness returned by the backend is shown."><SimpleItems items={d.moduleReadiness} empty="No module readiness records were returned."/></DashboardSection>:null}<div className="grid gap-6 xl:grid-cols-2"><DashboardSection id="tasks" title="Tasks" description={tasks.isError?"This widget is temporarily unavailable.":undefined}><DashboardTaskList items={tasks.data??[]}/></DashboardSection><DashboardSection id="alerts" title="Alerts" description={alerts.isError?"This widget is temporarily unavailable.":undefined}><DashboardAlertList items={alerts.data??d.systemAlerts}/></DashboardSection></div>{showHealth&&scope==="school"?<DashboardSection title="Subscription and access state"><RecordSummary record={d.subscription??{}}/></DashboardSection>:null}{scope==="school"?<DashboardSection id="activity" title="Recent activity"><SimpleItems items={d.recentActivity} empty="No recent audit summaries were returned."/></DashboardSection>:null}</DashboardPage>;
+export function AdministratorDashboardView({
+  scope,
+}: {
+  scope: "school" | "platform";
+}) {
+  const query = useAdministratorDashboard(scope);
+  const tasks = useAdministratorTasks();
+  const alerts = useAdministratorAlerts();
+  const preferences = useAdministratorPreferences();
+  const canInvite = useAuthStore(canInviteSchoolUsers);
+  const canManage = useAuthStore(canManageStaff);
+  if (query.isPending)
+    return (
+      <DashboardPage>
+        <DashboardHeaderSkeleton />
+      </DashboardPage>
+    );
+  if (query.isError || !query.data)
+    return (
+      <DashboardPage>
+        <DashboardUnavailableState onRetry={() => query.refetch()} />
+      </DashboardPage>
+    );
+  const d = query.data;
+  const hidden = Array.isArray(asRecord(preferences.data).dashboard_widgets)
+    ? (asRecord(preferences.data).dashboard_widgets as string[])
+    : [];
+  const showHealth = asRecord(preferences.data).show_system_health !== false;
+  const actions: QuickAction[] =
+    scope === "platform"
+      ? [
+          {
+            title: "View schools",
+            description: "Browse registered schools and lifecycle status.",
+            href: "/workspace/admin/platform/schools",
+            icon: Building2,
+            permission: "manage_school_lifecycle",
+          },
+          {
+            title: "Review platform alerts",
+            description: "Open the current alert summary.",
+            href: "#alerts",
+            icon: AlertTriangle,
+            permission: "view_admin_alerts",
+          },
+          {
+            title: "Review school lifecycle",
+            description: "Inspect the platform distribution.",
+            href: "#distribution",
+            icon: Building2,
+            permission: "manage_school_lifecycle",
+          },
+        ]
+      : [
+          ...(canInvite
+            ? [
+                {
+                  title: "Invite school users",
+                  description: "Send invitations to staff.",
+                  href: "/workspace/admin/school/users",
+                  icon: School,
+                },
+              ]
+            : []),
+          ...(canManage
+            ? [
+                {
+                  title: "Staff access",
+                  description:
+                    "Manage Headteacher and School Secretary responsibilities.",
+                  href: "/workspace/admin/school/staff-access",
+                  icon: UsersRound,
+                },
+              ]
+            : []),
+          {
+            title: "Review setup",
+            description: "Inspect school readiness and missing setup.",
+            href: "#readiness",
+            icon: School,
+            permission: "view_academic_setup_status",
+          },
+          {
+            title: "View alerts",
+            description: "Open the current alert list.",
+            href: "#alerts",
+            icon: AlertTriangle,
+            permission: "view_admin_alerts",
+          },
+          {
+            title: "Open action queue",
+            description: "Review administrative tasks.",
+            href: "#tasks",
+            icon: ListTodo,
+            permission: "view_admin_tasks",
+          },
+          {
+            title: "Review activity",
+            description: "Inspect recent safe audit summaries.",
+            href: "#activity",
+            icon: ClipboardCheck,
+            permission: "view_admin_audit",
+          },
+        ];
+  return (
+    <DashboardPage>
+      <DashboardHeader
+        title={
+          scope === "platform" ? "Platform overview" : "School administration"
+        }
+        description={
+          scope === "platform"
+            ? "Cross-school operational health without exposing school-private records."
+            : "Staff access, school alerts and setup readiness."
+        }
+        role={
+          scope === "platform"
+            ? "Platform administrator"
+            : "School administrator"
+        }
+        lastRefreshedAt={d.lastRefreshedAt}
+        refreshing={query.isFetching}
+        onRefresh={() => query.refetch()}
+      />
+      {scope === "platform" ? (
+        <DashboardWelcomeCard focus="Monitor lifecycle, subscriptions and platform-level exceptions." />
+      ) : null}
+      <DashboardMobileSummary
+        items={[
+          {
+            label: scope === "platform" ? "Schools" : "Learners",
+            value: scope === "platform" ? d.totalSchools : d.learnerCount,
+          },
+          { label: "Teachers", value: d.teacherCount },
+          { label: "Alerts", value: d.criticalAlerts },
+        ]}
+      />
+      <DashboardKpiGrid>
+        <DashboardKpiCard
+          label={scope === "platform" ? "Schools" : "Learners"}
+          value={scope === "platform" ? d.totalSchools : d.learnerCount}
+          icon={scope === "platform" ? Building2 : GraduationCap}
+        />
+        <DashboardKpiCard
+          label="Teachers"
+          value={d.teacherCount}
+          icon={UsersRound}
+        />
+        <DashboardKpiCard
+          label={scope === "platform" ? "Failed provisioning" : "Pending users"}
+          value={scope === "platform" ? null : d.pendingUserActions}
+          icon={CheckSquare2}
+        />
+        <DashboardKpiCard
+          label={
+            scope === "platform" ? "Upcoming expiries" : "Profile completeness"
+          }
+          value={
+            scope === "platform"
+              ? null
+              : d.profileCompleteness === null
+                ? null
+                : `${d.profileCompleteness}%`
+          }
+          icon={HeartPulse}
+        />
+      </DashboardKpiGrid>
+      <DashboardQuickActions actions={actions} />
+      {scope === "platform" && numericData(d.schoolsByLifecycle).length ? (
+        <div id="distribution">
+          <DashboardBarChart data={numericData(d.schoolsByLifecycle)} />
+        </div>
+      ) : null}
+      <div className="grid gap-6 xl:grid-cols-2">
+        <DashboardSection
+          id="tasks"
+          title="Tasks"
+          description={
+            tasks.isError
+              ? "This widget is temporarily unavailable."
+              : undefined
+          }
+        >
+          <DashboardTaskList items={tasks.data ?? []} />
+        </DashboardSection>
+        <DashboardSection
+          id="alerts"
+          title="Alerts"
+          description={
+            alerts.isError
+              ? "This widget is temporarily unavailable."
+              : undefined
+          }
+        >
+          <DashboardAlertList items={alerts.data ?? d.systemAlerts} />
+        </DashboardSection>
+      </div>
+      {scope === "school" ? <SchoolReadinessSummary /> : null}
+      {scope === "school" && !hidden.includes("module_readiness") ? (
+        <DashboardSection
+          id="module-readiness"
+          title="Module readiness"
+          description="Only readiness returned by the backend is shown."
+        >
+          <SimpleItems
+            items={d.moduleReadiness}
+            empty="No module readiness records were returned."
+          />
+        </DashboardSection>
+      ) : null}
+      {showHealth && scope === "school" ? (
+        <DashboardSection title="Subscription and access state">
+          <RecordSummary record={d.subscription ?? {}} />
+        </DashboardSection>
+      ) : null}
+      {scope === "school" ? (
+        <DashboardSection id="activity" title="Recent activity">
+          <SimpleItems
+            items={d.recentActivity}
+            empty="No recent audit summaries were returned."
+          />
+        </DashboardSection>
+      ) : null}
+    </DashboardPage>
+  );
 }
 
 export function LeadershipDashboardView(){const view=useLeadershipView();const query=useLeadershipDashboard(view);if(query.isPending)return <DashboardPage><DashboardHeaderSkeleton/></DashboardPage>;if(query.isError||!query.data)return <DashboardPage><DashboardUnavailableState onRetry={()=>query.refetch()}/></DashboardPage>;const d=query.data,w=d.widgets;const actions:QuickAction[]=[{title:"Review action queue",description:"Open current leadership actions.",href:"#actions",icon:ListTodo,permission:"view_leadership_action_queue"},{title:"Review attendance",description:"Inspect the authorized attendance summary.",href:"#attendance",icon:UsersRound,permission:"view_attendance_intelligence"},{title:"Review compliance",description:"Inspect teaching compliance summaries.",href:"#compliance",icon:ClipboardCheck,permission:"view_teacher_compliance"},{title:"Finance summary",description:"View only when explicitly authorized.",href:"#finance",icon:WalletCards,permission:"view_finance_oversight",excludeRoles:["HOD"]}];return <DashboardPage><DashboardHeader title={`${view[0].toUpperCase()}${view.slice(1)} dashboard`} description="Role-scoped school oversight from the leadership portal." role={view.toUpperCase()} lastRefreshedAt={d.lastRefreshedAt} refreshing={query.isFetching} onRefresh={()=>query.refetch()}/><DashboardWelcomeCard focus={view==="hod"?"Focus on department teaching quality, readiness and compliance.":"Review the highest-priority school signals and actions."}/><DashboardQuickActions actions={actions}/><DashboardSection title="Academic context"><RecordSummary record={d.academicContext}/></DashboardSection><div className="grid gap-6 xl:grid-cols-2">{Object.entries(w).map(([key,value])=><DashboardSection key={key} id={key.replaceAll("_","-")} title={key.replaceAll("_"," ")}><RecordSummary record={asRecord(value)}/>{Array.isArray(value)?<SimpleItems items={asRecords(value)} empty="No items were returned."/>:null}</DashboardSection>)}</div></DashboardPage>}
