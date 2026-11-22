@@ -1,10 +1,22 @@
 # Live two-school integration verification
 
-Date: 15 November 2026. The scoped live integration gate **PASSED** against backend candidate `4ead486ea2b240e0266ed21538ea67f695128654` and frontend `d1d8fcf8c4c83019ac5c0d922f43c221f315c2fc`. Both PR #1 (web) and #87 (API) remain drafts. No business workflows, merge or deployment.
+## Current backend baseline
 
-## Final-candidate follow-up
+Updated 15 November 2026 (Africa/Nairobi). The live workflow now pins merged backend main `785d86adffe14ad8d143ae5e2832a597a095dcd8` (PR #88), and verifies that exact checkout before installing/migrating it. The frontend starting tree is dashboard branch `a951e50d9632f88913b163c1335547e24f02cf85` (PR #1 merged); develop is unchanged. API PR #87 is also merged.
 
-The live workflow now pins backend `bf06a480cec04ba99ea0391e43bddfb3b17aa323`, which includes the same least-privilege grants and a schema-correct leadership readiness query. Full regression of the earlier candidate exposed an existing academic-insight path filtering nonexistent child-table school columns. The repair derives paper/result ownership through parent exams and adds a nonzero two-school count/deleted-exam regression. No existing grant is removed to avoid that path. Current final-candidate evidence is maintained in [API PR #87](https://github.com/ken-OMO/shuleos-api/pull/87) and [web PR #1](https://github.com/ken-OMO/shuleos-web/pull/1); the successful earlier scoped run remains recorded below.
+Backend post-merge CI passed all six jobs, including 2,498 tests / 35,125 assertions: https://github.com/ken-OMO/shuleos-api/actions/runs/43750275569. The frontend live gate must be rerun at this backend pin; its exact frontend head, workflow run and outcome are recorded in the corresponding draft frontend PR. Earlier results below are historical and do not count as a rerun against the new pin.
+
+The nine live tests remain unchanged: actual Laravel HTTP/PostgreSQL, five role dashboards across two schools, logout/account switching, refresh revocation, reciprocal foreign-school resource denial and linked/unlinked-child boundaries. No fixture-only permission grants, mocked API responses or production records are introduced. The workflow also runs on pushes to the dashboard target branch so a later merge can verify the same pinned gate.
+
+This rerun verifies authentication/dashboard compatibility with the new backend baseline. It does not establish whole-ERP subscription enforcement or business-form workflows; those remain on hold. The backend subscription/lifecycle first-slice tests are separate evidence in PR #88. Deployment and real-school Elections remain blocked.
+
+## Historical candidate record
+
+Historical status before the merges: 15 November 2026. The scoped live integration gate **PASSED** against backend candidate `4ead486ea2b240e0266ed21538ea67f695128654` and frontend `d1d8fcf8c4c83019ac5c0d922f43c221f315c2fc`. Both PR #1 (web) and #87 (API) remain drafts. No business workflows, merge or deployment.
+
+## Historical final-candidate follow-up
+
+At that stage the live workflow pinned backend `bf06a480cec04ba99ea0391e43bddfb3b17aa323`, which includes the same least-privilege grants and a schema-correct leadership readiness query. Full regression of the earlier candidate exposed an existing academic-insight path filtering nonexistent child-table school columns. The repair derives paper/result ownership through parent exams and adds a nonzero two-school count/deleted-exam regression. No existing grant is removed to avoid that path. The final-candidate evidence is maintained in [API PR #87](https://github.com/ken-OMO/shuleos-api/pull/87) and [web PR #1](https://github.com/ken-OMO/shuleos-web/pull/1); the successful earlier scoped run remains recorded below.
 
 ## Successful candidate verification
 
@@ -64,7 +76,7 @@ Core system roles are ensured later by `2026_08_11_092718_ensure_core_system_rol
 
 Do not repair this by weakening frontend guards, bypassing backend authorization, granting all permissions, or silently adding fixture-only grants.
 
-## Required next development action
+## Historical next development action (completed; superseded by the current baseline)
 
 Prepare a forward-only, idempotent, least-privilege backend role-permission backfill using the intended role contracts. Preserve school-specific/custom-role choices and existing grants. Verify migration behavior on a freshly migrated PostgreSQL database and an existing database, with role-boundary regression tests. Then rerun all nine live tests against the resulting pinned backend commit before reopening the business-workflow gate.
 

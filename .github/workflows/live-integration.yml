@@ -1,7 +1,7 @@
 name: Live Laravel PostgreSQL verification
 on:
   push:
-    branches: ['fix/frontend-auth-contract']
+    branches: ['fix/frontend-auth-contract', 'feature/frontend-dashboard-workspace-phase-1', 'verification/frontend-backend-main']
   pull_request:
 concurrency:
   group: live-${{ github.head_ref || github.ref_name }}
@@ -60,12 +60,16 @@ jobs:
           php-version: '8.2'
           extensions: pgsql, pdo_pgsql, gd
           coverage: none
-          ini-values: memory_limit=1G
+          # Avoid PHP JIT trait/self type errors during the long-lived HTTP test server.
+          # Upstream reproducer: https://github.com/php/php-src/issues/17654
+          ini-values: memory_limit=1G, opcache.jit=off, opcache.jit_buffer_size=0
+      - name: Verify JIT is disabled
+        run: php -r 'if ((int) ini_get("opcache.jit_buffer_size") !== 0 || ! in_array(ini_get("opcache.jit"), ["", "0", "off", "disable"], true)) { fwrite(STDERR, "JIT must be disabled for live verification.\n"); exit(1); } echo "PHP ".PHP_VERSION."; JIT disabled.\n";'
       - name: Check out pinned public backend
         run: |
           git clone --no-checkout https://github.com/ken-OMO/shuleos-api.git .live-api
-          git -C .live-api checkout --detach bf06a480cec04ba99ea0391e43bddfb3b17aa323
-          test "$(git -C .live-api rev-parse HEAD)" = bf06a480cec04ba99ea0391e43bddfb3b17aa323
+          git -C .live-api checkout --detach 785d86adffe14ad8d143ae5e2832a597a095dcd8
+          test "$(git -C .live-api rev-parse HEAD)" = 785d86adffe14ad8d143ae5e2832a597a095dcd8
       - name: Install backend and migrate isolated database
         working-directory: .live-api
         run: |
