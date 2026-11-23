@@ -55,7 +55,7 @@ export function PublicRegistrationForm() {
     try {
       await submitRegistration({ school_name: value("school_name"), operating_mode: mode, package_id: selected.id,
         trial_boarding: form.has("trial_boarding"), trial_transport: form.has("trial_transport"),
-        trial_elections: form.has("trial_elections"),
+        trial_elections: !selected.elections_included && form.has("trial_elections"),
         admin: { first_name: value("admin.first_name"), last_name: value("admin.last_name"), email: value("admin.email") },
         email: value("email"), phone: value("phone"), physical_address: value("physical_address"), postal_address: value("postal_address") });
       setSubmitted(true);
@@ -111,7 +111,8 @@ export function PublicRegistrationForm() {
       {addons.isError && <p className="text-sm text-muted-foreground">Add-on prices are temporarily unavailable.</p>}
       {mode !== "day" ? <label className="block text-sm"><input type="checkbox" name="trial_boarding" /> Boarding{addonPrice("boarding")}</label> : null}
       {mode !== "boarding" ? <label className="block text-sm"><input type="checkbox" name="trial_transport" /> Transport{addonPrice("transport")}</label> : null}
-      <label className="block text-sm"><input type="checkbox" name="trial_elections" /> Student Council Elections{addonPrice("elections")}</label>
+      {selected?.elections_included ? <p className="text-sm">Student Council Elections is included in this package.</p>
+        : <label className="block text-sm"><input type="checkbox" name="trial_elections" /> Student Council Elections{addonPrice("elections")}</label>}
     </fieldset> : null}
     <Button type="submit" disabled={busy || packages.isError || !selected} className="w-full">{busy ? "Submitting..." : "Submit registration request"}</Button>
     <p className="text-xs text-muted-foreground">Do not submit passwords, learner records or payment details.</p>

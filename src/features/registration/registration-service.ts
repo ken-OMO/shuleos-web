@@ -22,6 +22,7 @@ export interface RegistrationPage { data: Registration[]; current_page: number; 
 // Public submissions never carry the currently signed-in user's bearer token.
 export const publicRegistrationClient = axios.create({ baseURL: environment.apiBaseUrl, timeout: 15_000, headers: { Accept: "application/json" } });
 export interface RegistrationPackage {
+  elections_included?: boolean;
   id: string;
   package_name: string;
   description: string | null;
