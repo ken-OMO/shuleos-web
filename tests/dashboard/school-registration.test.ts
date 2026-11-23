@@ -4,6 +4,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { publicRegistrationClient, submitRegistration, registrationRequests, reviewRegistration, registrationPermissions, canReviewRegistrations } from "../../src/features/registration/registration-service";
 import { PublicRegistrationForm } from "../../src/features/registration/public-registration-form";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { apiClient, setApiAccessToken } from "../../src/services/api/api-client";
 import { useAuthStore } from "../../src/store/auth-store";
 import { authenticatedSnapshot } from "../../src/services/auth/auth-state";
@@ -35,7 +36,7 @@ test("public school request never sends a signed-in bearer token or authorizes t
 });
 
 test("public form asks for school and administrator details without collecting passwords or payment information", () => {
-  const html = renderToStaticMarkup(createElement(PublicRegistrationForm));
+  const html = renderToStaticMarkup(createElement(QueryClientProvider, { client: new QueryClient() }, createElement(PublicRegistrationForm)));
   for (const name of ["school_name", "operating_mode", "admin.email", "admin.first_name", "admin.last_name"]) assert.ok(html.includes(`name="${name}"`));
   assert.ok(html.includes("platform-owner review"));
   assert.ok(!html.includes('type="password"'));
