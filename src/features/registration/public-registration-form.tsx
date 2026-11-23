@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiError } from "@/services/api/api-error";
-import { submitRegistration } from "./registration-service";
+import { registrationPackages, submitRegistration } from "./registration-service";
 
 const fields = [
   ["school_name", "School name", true, 255],
@@ -17,22 +18,34 @@ const fields = [
   ["physical_address", "Physical address (optional)", false, 255],
   ["postal_address", "Postal address (optional)", false, 255],
 ] as const;
+const priceFormat = new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES" });
+
 export function PublicRegistrationForm() {
   const [busy, setBusy] = useState(false), [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [invalid, setInvalid] = useState<Record<string, string[]>>({});
+  const [mode, setMode] = useState("");
+  const [packageId, setPackageId] = useState("");
+  const packages = useQuery({
+    queryKey: ["public-registration-packages"],
+    queryFn: ({ signal }) => registrationPackages(signal),
+    retry: false,
+  });
+  const selected = packages.data?.find(item => item.id === packageId);
   if (submitted) return <div role="status" className="space-y-4"><h1 className="text-2xl font-bold">Request received</h1>
     <p>Registration requests are reviewed before accounts are created. An administrator invitation is sent only after approval.</p>
     <p className="text-sm text-muted-foreground">If your email already belongs to an account or a pending request, another request is not created.</p>
     <Link className="text-primary underline" href="/login">Return to sign in</Link></div>;
   return <form className="space-y-5" onSubmit={async event => {
     event.preventDefault();
-    if (busy) return;
+    if (busy || packages.isError || !selected) return;
     setBusy(true); setError(null); setInvalid({});
     const form = new FormData(event.currentTarget);
     const value = (name: string) => String(form.get(name) ?? "").trim();
     try {
-      await submitRegistration({ school_name: value("school_name"), operating_mode: value("operating_mode"),
+      await submitRegistration({ school_name: value("school_name"), operating_mode: mode, package_id: selected.id,
+        trial_boarding: form.has("trial_boarding"), trial_transport: form.has("trial_transport"),
+        trial_elections: form.has("trial_elections"),
         admin: { first_name: value("admin.first_name"), last_name: value("admin.last_name"), email: value("admin.email") },
         email: value("email"), phone: value("phone"), physical_address: value("physical_address"), postal_address: value("postal_address") });
       setSubmitted(true);
@@ -48,10 +61,36 @@ export function PublicRegistrationForm() {
         aria-invalid={Boolean(invalid[name])} aria-describedby={invalid[name] ? `${name}-error` : undefined} />
       {invalid[name] ? <p id={`${name}-error`} className="text-sm text-destructive">Please review {label.toLowerCase()}.</p> : null}</div>)}
     <div className="space-y-2"><label htmlFor="operating_mode" className="text-sm font-medium">Operating mode</label>
-      <select id="operating_mode" name="operating_mode" required disabled={busy} className="w-full rounded-lg border bg-background p-2">
+      <select id="operating_mode" name="operating_mode" value={mode} onChange={event => setMode(event.target.value)} required disabled={busy} className="w-full rounded-lg border bg-background p-2">
         <option value="">Select operating mode</option><option value="day">Day</option><option value="boarding">Boarding</option><option value="day_and_boarding">Day and boarding</option>
       </select></div>
-    <Button type="submit" disabled={busy} className="w-full">{busy ? "Submitting..." : "Submit registration request"}</Button>
+    <div className="space-y-2">
+      <label htmlFor="package_id" className="text-sm font-medium">Subscription package</label>
+      {packages.isError ? <div role="alert" className="text-sm">
+        Packages are temporarily unavailable. <button type="button" className="underline" onClick={() => { void packages.refetch(); }}>Retry</button>
+      </div> : null}
+      <select id="package_id" name="package_id" required disabled={busy || !packages.data?.length}
+        value={packageId} onChange={event => setPackageId(event.target.value)} className="w-full rounded-lg border bg-background p-2"
+        aria-invalid={Boolean(invalid.package_id)}>
+        <option value="">{packages.isPending ? "Loading packages…" : "Select a package"}</option>
+        {packages.data?.map(item => <option key={item.id} value={item.id}>
+          {item.package_name} · {priceFormat.format(Number(item.amount))} / {item.duration_months} months
+        </option>)}
+      </select>
+      {packages.data?.length === 0 ? <p className="text-sm">Registration packages are currently unavailable.</p> : null}
+      {selected?.description ? <p className="text-sm">{selected.description}</p> : null}
+      {selected?.features.length ? <ul className="list-disc pl-5 text-sm">
+        {selected.features.map((feature, index) => <li key={index}>{feature}</li>)}
+      </ul> : null}
+      <p className="text-sm text-muted-foreground">The 14-day package trial starts when your School Admin activates their account.</p>
+    </div>
+    {mode ? <fieldset disabled={busy} className="space-y-2">
+      <legend className="mb-2 text-sm font-medium">Optional add-on requests</legend>
+      {mode !== "day" ? <label className="block text-sm"><input type="checkbox" name="trial_boarding" /> Boarding</label> : null}
+      {mode !== "boarding" ? <label className="block text-sm"><input type="checkbox" name="trial_transport" /> Transport</label> : null}
+      <label className="block text-sm"><input type="checkbox" name="trial_elections" /> Student Council Elections</label>
+    </fieldset> : null}
+    <Button type="submit" disabled={busy || packages.isError || !selected} className="w-full">{busy ? "Submitting..." : "Submit registration request"}</Button>
     <p className="text-xs text-muted-foreground">Do not submit passwords, learner records or payment details.</p>
     <Link className="block text-center text-sm text-primary underline" href="/login">Already have an account? Sign in</Link>
   </form>;
