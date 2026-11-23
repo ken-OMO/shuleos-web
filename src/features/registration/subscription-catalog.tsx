@@ -19,6 +19,18 @@ function billingLabel(amount: number | string, months: number) {
   return `${currency.format(Number(amount))} / ${months} ${months === 1 ? "month" : "months"}`;
 }
 
+const basicFeatures = ["Exams", "Report Cards", "Merit Lists"];
+const premiumFeatures = [
+  ...basicFeatures,
+  "Attendance", "Schemes of Work", "Lesson Plans", "Records of Work", "Curriculum Coverage",
+  "Timetable", "Discipline", "Parent Portal", "Notifications",
+];
+const packagePresets = [
+  { name: "Basic", features: basicFeatures },
+  { name: "Premium", features: premiumFeatures },
+  { name: "Enterprise", features: [...premiumFeatures, "Finance", "Library", "Inventory", "Medical", "Documents"] },
+];
+
 type Catalog = { packages: Package[]; addons: RegistrationAddon[] };
 
 export function SubscriptionCatalog() {
@@ -33,6 +45,7 @@ export function SubscriptionCatalog() {
     },
   });
   const [packageId, setPackageId] = useState("");
+  const [presetName, setPresetName] = useState("");
   const [draft, setDraft] = useState<Package | "new" | null>(null);
   const [addonDraft, setAddonDraft] = useState<RegistrationAddon["code"] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -77,6 +90,7 @@ export function SubscriptionCatalog() {
   if (scope !== "platform") return null;
   const viewedPackage = query.data?.packages.find(item => item.id === packageId);
   const selected = draft === "new" ? null : draft;
+  const preset = draft === "new" ? packagePresets.find(item => item.name === presetName) : undefined;
   return <DashboardPage>
     <DashboardHeader title="Subscription catalog" description="Manage package contents and the prices schools see during registration." role="Platform Owner" />
     {notice && <p role={notice.error ? "alert" : "status"} className={notice.error ? "text-destructive" : undefined}>{notice.text}</p>}
@@ -86,7 +100,10 @@ export function SubscriptionCatalog() {
       <section className="space-y-4 rounded-lg border p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">Saved packages</h2>
-          <Button disabled={busy} onClick={() => setDraft("new")}>New package</Button>
+          <Button disabled={busy} onClick={() => {
+            setPresetName("");
+            setDraft("new");
+          }}>New package</Button>
         </div>
         {query.data.packages.length === 0 && <p>No packages configured.</p>}
         {query.data.packages.length > 0 && <div className="space-y-2">
@@ -116,11 +133,18 @@ export function SubscriptionCatalog() {
         {draft && <form key={selected?.id ?? "new"} className="space-y-3 rounded-lg border p-4" onSubmit={event => void save(event, selected ? `/packages/${selected.id}` : "/packages", !selected, true)}>
           <fieldset disabled={busy} className="space-y-3">
             <legend className="font-medium">{selected ? `Edit ${selected.package_name}` : "New package"}</legend>
-            <label className="block">Name<Input name="package_name" maxLength={100} required defaultValue={selected?.package_name} /></label>
+            {draft === "new" && <label className="block">Package preset
+              <select className="block w-full rounded-lg border bg-background p-2" value={presetName}
+                onChange={event => setPresetName(event.target.value)}>
+                <option value="">Custom package</option>
+                {packagePresets.map(item => <option key={item.name} value={item.name}>{item.name}</option>)}
+              </select>
+            </label>}
+            <label className="block">Name<Input key={presetName} name="package_name" maxLength={100} required defaultValue={selected?.package_name ?? preset?.name} /></label>
             <label className="block">Description<Input name="description" maxLength={2000} defaultValue={selected?.description ?? ""} /></label>
             <PriceFields amount={selected?.amount} duration={selected?.duration_months} />
             <label className="block">Included features, one per line
-              <textarea className="block w-full rounded-lg border bg-background p-2" rows={5} name="features" defaultValue={selected?.features.join("\n")} />
+              <textarea className="block w-full rounded-lg border bg-background p-2" rows={5} key={presetName} name="features" defaultValue={(selected?.features ?? preset?.features)?.join("\n")} />
             </label>
             <label className="block"><input type="checkbox" name="active" defaultChecked={selected?.active ?? false} /> Show in school registration</label>
             <div className="flex gap-2">
