@@ -11,6 +11,12 @@ test("public registration stays pending until the platform owner explicitly conf
       expect(request.headers().authorization).toBeUndefined();
       return route.fulfill({ json: { success: true, data: [{ id: "package-id", package_name: "Basic", description: null, amount: "7100.00", duration_months: 4, features: ["Report cards"] }] } });
     }
+    if (path === "/api/school-registration-addon-prices") {
+      expect(request.headers().authorization).toBeUndefined();
+      return route.fulfill({ json: { success: true, data: [
+        { code: "transport", name: "Transport", amount: "1500.00", duration_months: 4 },
+      ] } });
+    }
     if (path === "/api/school-registration-requests") {
       expect(request.headers().authorization).toBeUndefined(); submitted = true;
       expect(request.postDataJSON()).toMatchObject({ school_name: "Mansoor Academy", package_id: "package-id",
@@ -35,7 +41,7 @@ test("public registration stays pending until the platform owner explicitly conf
   await expect(page.getByText("Report cards", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Boarding", { exact: true })).toHaveCount(0);
   await expect(page.getByLabel("Student Council Elections")).not.toBeChecked();
-  await page.getByLabel("Transport", { exact: true }).check();
+  await page.getByLabel(/Transport.*1,500.*4 months/).check();
   await page.getByRole("button", { name: "Submit registration request", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Request received" })).toBeVisible();
   expect(submitted).toBe(true); expect(approvalCalls).toBe(0);
