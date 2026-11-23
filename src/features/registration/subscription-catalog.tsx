@@ -13,6 +13,12 @@ import type { RegistrationAddon, RegistrationPackage } from "./registration-serv
 
 const endpoint = "/admin/platform/subscription-catalog";
 type Package = RegistrationPackage & { active: boolean };
+const currency = new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES" });
+
+function billingLabel(amount: number | string, months: number) {
+  return `${currency.format(Number(amount))} / ${months} ${months === 1 ? "month" : "months"}`;
+}
+
 type Catalog = { packages: Package[]; addons: RegistrationAddon[] };
 
 export function SubscriptionCatalog() {
@@ -27,6 +33,7 @@ export function SubscriptionCatalog() {
     },
   });
   const [draft, setDraft] = useState<Package | "new" | null>(null);
+  const [addonDraft, setAddonDraft] = useState<RegistrationAddon["code"] | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ error: boolean; text: string } | null>(null);
 
@@ -46,9 +53,14 @@ export function SubscriptionCatalog() {
     setNotice(null);
     try {
       await apiClient.request({ method: create ? "post" : "put", url: endpoint + path, data: body });
-      setDraft(null);
-      await query.refetch();
-      setNotice({ error: false, text: "Catalog saved." });
+      if (packageFields) setDraft(null);
+      else setAddonDraft(null);
+      const refreshed = await query.refetch();
+      const subject = packageFields ? "Package" : "Add-on price";
+      setNotice({
+        error: false,
+        text: refreshed.isSuccess ? `${subject} saved.` : `${subject} saved. Retry to refresh the catalog.`,
+      });
     } catch (error) {
       const failure = normalizeApiError(error);
       setNotice({ error: true, text: Object.values(failure.validationErrors).flat().join(" ") || failure.message });
@@ -67,16 +79,20 @@ export function SubscriptionCatalog() {
     {query.data && <>
       <section className="space-y-4 rounded-lg border p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">Packages</h2>
+          <h2 className="text-lg font-semibold">Saved packages</h2>
           <Button disabled={busy} onClick={() => setDraft("new")}>New package</Button>
         </div>
         {query.data.packages.length === 0 && <p>No packages configured.</p>}
         <ul className="divide-y">
-          {query.data.packages.map(item => <li key={item.id} className="flex items-center justify-between gap-4 py-3">
+          {query.data.packages.map(item => <li key={item.id} className="flex flex-wrap items-start justify-between gap-4 py-4">
             <div>
               <p className="font-medium">{item.package_name} · {item.active ? "Published" : "Hidden"}</p>
-              <p className="text-sm">KSh {item.amount} / {item.duration_months} months</p>
-              {item.features.length > 0 && <p className="text-sm text-muted-foreground">{item.features.join(", ")}</p>}
+              <p className="text-sm">{billingLabel(item.amount, item.duration_months)}</p>
+              {item.description && <p className="mt-2 break-words text-sm">{item.description}</p>}
+              <h3 className="mt-3 text-sm font-medium">Included features</h3>
+              {item.features.length > 0 ? <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
+                {item.features.map((feature, index) => <li key={index}>{feature}</li>)}
+              </ul> : <p className="text-sm text-muted-foreground">No features listed.</p>}
             </div>
             <Button variant="outline" disabled={busy} onClick={() => setDraft(item)}>Edit {item.package_name}</Button>
           </li>)}
@@ -100,13 +116,35 @@ export function SubscriptionCatalog() {
       </section>
       <section className="space-y-4 rounded-lg border p-4">
         <h2 className="text-lg font-semibold">Add-ons</h2>
-        {query.data.addons.map(addon => <form key={addon.code} className="rounded-lg border p-4" onSubmit={event => void save(event, `/addons/${addon.code}`)}>
-          <fieldset disabled={busy} className="space-y-3">
-            <legend className="font-medium">{addon.name}</legend>
-            <PriceFields amount={addon.amount} duration={addon.duration_months} />
-            <Button type="submit" variant="outline">Save {addon.name} price</Button>
-          </fieldset>
-        </form>)}
+        <ul className="divide-y">
+          {query.data.addons.map(addon => {
+            const { amount, duration_months: months } = addon;
+            const configured = amount !== null && months !== null;
+            return <li key={addon.code} className="space-y-3 py-4">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="font-medium">{addon.name}</p>
+                  <p className="text-sm">{configured
+                    ? billingLabel(amount, months)
+                    : "Price not set"}</p>
+                </div>
+                <Button variant="outline" disabled={busy} onClick={() => setAddonDraft(addon.code)}>
+                  {configured ? "Edit" : "Set"} {addon.name} price
+                </Button>
+              </div>
+              {addonDraft === addon.code && <form className="rounded-lg border p-4" onSubmit={event => void save(event, `/addons/${addon.code}`)}>
+                <fieldset disabled={busy} className="space-y-3">
+                  <legend className="font-medium">{addon.name} price</legend>
+                  <PriceFields amount={addon.amount} duration={addon.duration_months} />
+                  <div className="flex gap-2">
+                    <Button type="submit">Save {addon.name} price</Button>
+                    <Button type="button" variant="outline" onClick={() => setAddonDraft(null)}>Cancel</Button>
+                  </div>
+                </fieldset>
+              </form>}
+            </li>;
+          })}
+        </ul>
       </section>
     </>}
   </DashboardPage>;
