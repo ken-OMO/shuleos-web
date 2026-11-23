@@ -30,6 +30,19 @@ export interface RegistrationPackage {
   features: string[];
 }
 
+export interface RegistrationAddon {
+  code: "boarding" | "transport" | "elections";
+  name: string;
+  amount: string | number | null;
+  duration_months: number | null;
+}
+
+export async function registrationAddonPrices(signal?: AbortSignal): Promise<RegistrationAddon[]> {
+  const { data } = await publicRegistrationClient.get("/school-registration-addon-prices", { signal });
+  if (data.success !== true || !Array.isArray(data.data)) throw new Error("Add-on prices unavailable.");
+  return data.data;
+}
+
 export async function registrationPackages(signal?: AbortSignal): Promise<RegistrationPackage[]> {
   const { data } = await publicRegistrationClient.get("/school-registration-packages", { signal });
   if (data.success !== true || !Array.isArray(data.data)) throw new Error("Packages unavailable.");

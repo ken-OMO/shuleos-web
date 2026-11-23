@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiError } from "@/services/api/api-error";
-import { registrationPackages, submitRegistration } from "./registration-service";
+import { registrationAddonPrices, registrationPackages, submitRegistration } from "./registration-service";
 
 const fields = [
   ["school_name", "School name", true, 255],
@@ -31,6 +31,16 @@ export function PublicRegistrationForm() {
     queryFn: ({ signal }) => registrationPackages(signal),
     retry: false,
   });
+  const addons = useQuery({
+    queryKey: ["public-registration-addon-prices"],
+    queryFn: ({ signal }) => registrationAddonPrices(signal),
+    retry: false,
+  });
+  const addonPrice = (code: string) => {
+    const item = addons.data?.find(addon => addon.code === code);
+    if (item?.amount == null || item.duration_months == null) return "";
+    return ` · ${priceFormat.format(Number(item.amount))} / ${item.duration_months} months`;
+  };
   const selected = packages.data?.find(item => item.id === packageId);
   if (submitted) return <div role="status" className="space-y-4"><h1 className="text-2xl font-bold">Request received</h1>
     <p>Registration requests are reviewed before accounts are created. An administrator invitation is sent only after approval.</p>
@@ -82,13 +92,26 @@ export function PublicRegistrationForm() {
       {selected?.features.length ? <ul className="list-disc pl-5 text-sm">
         {selected.features.map((feature, index) => <li key={index}>{feature}</li>)}
       </ul> : null}
+      {packages.data && packages.data.length > 1 && <details className="text-sm">
+        <summary className="cursor-pointer">Compare packages</summary>
+        <ul className="mt-2 divide-y rounded-lg border">
+          {packages.data.map(item => <li key={item.id} className="space-y-1 p-3">
+            <p className="font-medium">{item.package_name} · {priceFormat.format(Number(item.amount))} / {item.duration_months} months</p>
+            {item.description && <p>{item.description}</p>}
+            {item.features.length > 0 && <ul className="list-disc pl-5">
+              {item.features.map((feature, index) => <li key={index}>{feature}</li>)}
+            </ul>}
+          </li>)}
+        </ul>
+      </details>}
       <p className="text-sm text-muted-foreground">The 14-day package trial starts when your School Admin activates their account.</p>
     </div>
     {mode ? <fieldset disabled={busy} className="space-y-2">
       <legend className="mb-2 text-sm font-medium">Optional add-on requests</legend>
-      {mode !== "day" ? <label className="block text-sm"><input type="checkbox" name="trial_boarding" /> Boarding</label> : null}
-      {mode !== "boarding" ? <label className="block text-sm"><input type="checkbox" name="trial_transport" /> Transport</label> : null}
-      <label className="block text-sm"><input type="checkbox" name="trial_elections" /> Student Council Elections</label>
+      {addons.isError && <p className="text-sm text-muted-foreground">Add-on prices are temporarily unavailable.</p>}
+      {mode !== "day" ? <label className="block text-sm"><input type="checkbox" name="trial_boarding" /> Boarding{addonPrice("boarding")}</label> : null}
+      {mode !== "boarding" ? <label className="block text-sm"><input type="checkbox" name="trial_transport" /> Transport{addonPrice("transport")}</label> : null}
+      <label className="block text-sm"><input type="checkbox" name="trial_elections" /> Student Council Elections{addonPrice("elections")}</label>
     </fieldset> : null}
     <Button type="submit" disabled={busy || packages.isError || !selected} className="w-full">{busy ? "Submitting..." : "Submit registration request"}</Button>
     <p className="text-xs text-muted-foreground">Do not submit passwords, learner records or payment details.</p>
