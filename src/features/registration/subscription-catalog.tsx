@@ -32,6 +32,7 @@ export function SubscriptionCatalog() {
       return data.data;
     },
   });
+  const [packageId, setPackageId] = useState("");
   const [draft, setDraft] = useState<Package | "new" | null>(null);
   const [addonDraft, setAddonDraft] = useState<RegistrationAddon["code"] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -52,9 +53,13 @@ export function SubscriptionCatalog() {
     setBusy(true);
     setNotice(null);
     try {
-      await apiClient.request({ method: create ? "post" : "put", url: endpoint + path, data: body });
-      if (packageFields) setDraft(null);
-      else setAddonDraft(null);
+      const { data } = await apiClient.request({ method: create ? "post" : "put", url: endpoint + path, data: body });
+      if (packageFields) {
+        setPackageId(data.data.id);
+        setDraft(null);
+      } else {
+        setAddonDraft(null);
+      }
       const refreshed = await query.refetch();
       const subject = packageFields ? "Package" : "Add-on price";
       setNotice({
@@ -70,6 +75,7 @@ export function SubscriptionCatalog() {
   }
 
   if (scope !== "platform") return null;
+  const viewedPackage = query.data?.packages.find(item => item.id === packageId);
   const selected = draft === "new" ? null : draft;
   return <DashboardPage>
     <DashboardHeader title="Subscription catalog" description="Manage package contents and the prices schools see during registration." role="Platform Owner" />
@@ -83,20 +89,30 @@ export function SubscriptionCatalog() {
           <Button disabled={busy} onClick={() => setDraft("new")}>New package</Button>
         </div>
         {query.data.packages.length === 0 && <p>No packages configured.</p>}
-        <ul className="divide-y">
-          {query.data.packages.map(item => <li key={item.id} className="flex flex-wrap items-start justify-between gap-4 py-4">
+        {query.data.packages.length > 0 && <div className="space-y-2">
+          <label htmlFor="saved-package" className="block text-sm font-medium">Package name</label>
+          <select id="saved-package" className="w-full rounded-lg border bg-background p-2 sm:max-w-sm"
+            value={viewedPackage?.id ?? ""} disabled={busy}
+            onChange={event => {
+              setPackageId(event.target.value);
+              setDraft(null);
+            }}>
+            <option value="">Select a package</option>
+            {query.data.packages.map(item => <option key={item.id} value={item.id}>{item.package_name}</option>)}
+          </select>
+        </div>}
+        {viewedPackage && <div className="flex flex-wrap items-start justify-between gap-4 rounded-lg border p-4">
             <div>
-              <p className="font-medium">{item.package_name} · {item.active ? "Published" : "Hidden"}</p>
-              <p className="text-sm">{billingLabel(item.amount, item.duration_months)}</p>
-              {item.description && <p className="mt-2 break-words text-sm">{item.description}</p>}
+              <p className="font-medium">{viewedPackage.package_name} · {viewedPackage.active ? "Published" : "Hidden"}</p>
+              <p className="text-sm">{billingLabel(viewedPackage.amount, viewedPackage.duration_months)}</p>
+              {viewedPackage.description && <p className="mt-2 break-words text-sm">{viewedPackage.description}</p>}
               <h3 className="mt-3 text-sm font-medium">Included features</h3>
-              {item.features.length > 0 ? <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
-                {item.features.map((feature, index) => <li key={index}>{feature}</li>)}
+              {viewedPackage.features.length > 0 ? <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
+                {viewedPackage.features.map((feature, index) => <li key={index}>{feature}</li>)}
               </ul> : <p className="text-sm text-muted-foreground">No features listed.</p>}
             </div>
-            <Button variant="outline" disabled={busy} onClick={() => setDraft(item)}>Edit {item.package_name}</Button>
-          </li>)}
-        </ul>
+            <Button variant="outline" disabled={busy} onClick={() => setDraft(viewedPackage)}>Edit {viewedPackage.package_name}</Button>
+        </div>}
         {draft && <form key={selected?.id ?? "new"} className="space-y-3 rounded-lg border p-4" onSubmit={event => void save(event, selected ? `/packages/${selected.id}` : "/packages", !selected, true)}>
           <fieldset disabled={busy} className="space-y-3">
             <legend className="font-medium">{selected ? `Edit ${selected.package_name}` : "New package"}</legend>
