@@ -28,7 +28,7 @@ const premiumFeatures = [
 const packagePresets = [
   { name: "Basic", features: basicFeatures },
   { name: "Premium", features: premiumFeatures },
-  { name: "Enterprise", features: [...premiumFeatures, "Finance", "Library", "Inventory", "Medical", "Documents", "Student Council Elections"] },
+  { name: "Enterprise", features: [...premiumFeatures, "Finance", "Library", "Inventory", "Medical", "Documents", "Student Council Elections", "Online Homework"] },
 ];
 
 type Catalog = { packages: Package[]; addons: RegistrationAddon[] };
