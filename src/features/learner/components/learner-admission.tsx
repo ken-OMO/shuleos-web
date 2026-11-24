@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useScopedQueryKey } from "@/features/dashboard/use-scoped-query-key";
 import { apiClient } from "@/services/api/api-client";
 import { normalizeApiError } from "@/services/api/api-error";
+import { BulkLearnerImport } from "./bulk-learner-import";
 import { useAuthStore } from "@/store/auth-store";
 
 type Grade = { id: string; grade_name: string; grade_number: number };
@@ -107,7 +108,14 @@ function AdmissionForm({ schoolId, classTeacher }: { schoolId: string; classTeac
   if (placement.isError) return <p role="alert">Grades and streams could not be loaded. <Button onClick={() => void placement.refetch()}>Retry</Button></p>;
   if (!placement.data.grades.length) return <p>{classTeacher ? "An active class-teacher appointment is required." : "Set up an active, classified grade and stream in Academic setup before admitting a learner."}</p>;
 
-  return <form onSubmit={submit} className="space-y-5">
+  const classes = placement.data.streams.flatMap(stream => {
+    const grade = placement.data.grades.find(item => item.id === stream.grade_id);
+    return grade ? [{ id: stream.id, label: `${grade.grade_name} / ${stream.stream_name}` }] : [];
+  });
+
+  return <>
+    {classTeacher && <BulkLearnerImport classes={classes} isCurrentSchool={isCurrentSchool} />}
+    <form onSubmit={submit} className="space-y-5">
     {notice && <p role="status">{notice}</p>}
     <fieldset disabled={busy} className="grid gap-4 md:grid-cols-2">
       <legend className="mb-3 font-semibold">Learner details</legend>
@@ -165,7 +173,8 @@ function AdmissionForm({ schoolId, classTeacher }: { schoolId: string; classTeac
       <p role="alert">Co-curricular choices could not be loaded. <Button type="button" variant="outline" onClick={() => void groups.refetch()}>Retry</Button></p>}
     {error && <p role="alert" className="text-destructive">{error}</p>}
     <Button type="submit" disabled={busy || !streams.length}>{busy ? "Admitting learner…" : "Admit learner"}</Button>
-  </form>;
+    </form>
+  </>;
 }
 
 export function LearnerAdmission({ classTeacher = false }: { classTeacher?: boolean }) {
@@ -179,7 +188,7 @@ export function LearnerAdmission({ classTeacher = false }: { classTeacher?: bool
         href="/templates/ShuleOS-Learner-Bulk-Import-Template.xlsx" download>
         Download Excel template
       </a>
-      <p className="mt-2 text-sm text-muted-foreground">Prepare one workbook per class. Upload is not yet available.</p>
+      <p className="mt-2 text-sm text-muted-foreground">{classTeacher ? "Prepare one workbook per class, then upload it below." : "Class teachers can upload a workbook for their assigned class."}</p>
     </DashboardSection>}
     <DashboardSection title="New learner">
       {allowed && schoolId ? <AdmissionForm key={schoolId + ":" + user.id} schoolId={schoolId} classTeacher={classTeacher} /> :
