@@ -57,7 +57,7 @@ export function PublicRegistrationForm() {
         trial_boarding: form.has("trial_boarding"), trial_transport: form.has("trial_transport"),
         trial_elections: !selected.elections_included && form.has("trial_elections"),
         admin: { first_name: value("admin.first_name"), last_name: value("admin.last_name"), email: value("admin.email") },
-        email: value("email"), phone: value("phone"), physical_address: value("physical_address"), postal_address: value("postal_address") });
+        email: value("email"), phone: value("phone"), mpesa_payer_phone: value("mpesa_payer_phone") || null, physical_address: value("physical_address"), postal_address: value("postal_address") });
       setSubmitted(true);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Request could not be sent.");
@@ -70,6 +70,13 @@ export function PublicRegistrationForm() {
       <Input id={name} name={name} required={required} maxLength={max} disabled={busy} type={name.includes("email") ? "email" : "text"}
         aria-invalid={Boolean(invalid[name])} aria-describedby={invalid[name] ? `${name}-error` : undefined} />
       {invalid[name] ? <p id={`${name}-error`} className="text-sm text-destructive">Please review {label.toLowerCase()}.</p> : null}</div>)}
+    <div className="space-y-2">
+      <label htmlFor="mpesa_payer_phone" className="text-sm font-medium">M-Pesa phone number for subscription payments (optional)</label>
+      <Input id="mpesa_payer_phone" name="mpesa_payer_phone" type="tel" maxLength={24} disabled={busy}
+        placeholder="07XXXXXXXX" aria-invalid={Boolean(invalid.mpesa_payer_phone)} aria-describedby="mpesa-payer-help" />
+      <p id="mpesa-payer-help" className="text-sm text-muted-foreground">This number is for future subscription payment prompts. Registration does not send a prompt.</p>
+      {invalid.mpesa_payer_phone && <p className="text-sm text-destructive">Enter a valid Kenyan mobile number.</p>}
+    </div>
     <div className="space-y-2"><label htmlFor="operating_mode" className="text-sm font-medium">Operating mode</label>
       <select id="operating_mode" name="operating_mode" value={mode} onChange={event => setMode(event.target.value)} required disabled={busy} className="w-full rounded-lg border bg-background p-2">
         <option value="">Select operating mode</option><option value="day">Day</option><option value="boarding">Boarding</option><option value="day_and_boarding">Day and boarding</option>
