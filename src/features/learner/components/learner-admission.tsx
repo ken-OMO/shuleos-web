@@ -174,6 +174,13 @@ export function LearnerAdmission({ classTeacher = false }: { classTeacher?: bool
   const schoolId = user?.school?.id;
   return <DashboardPage>
     <DashboardHeader title="Learner admission" role="School" description="Admit a learner and assign their grade and stream." />
+    {allowed && schoolId && <DashboardSection title="Bulk learner import">
+      <a className="text-primary underline underline-offset-4"
+        href="/templates/ShuleOS-Learner-Bulk-Import-Template.xlsx" download>
+        Download Excel template
+      </a>
+      <p className="mt-2 text-sm text-muted-foreground">Prepare one workbook per class. Upload is not yet available.</p>
+    </DashboardSection>}
     <DashboardSection title="New learner">
       {allowed && schoolId ? <AdmissionForm key={schoolId + ":" + user.id} schoolId={schoolId} classTeacher={classTeacher} /> :
         <p role="alert">Learner admission is unavailable.</p>}
