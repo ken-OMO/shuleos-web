@@ -4,6 +4,7 @@ import type { AuthUser } from "@/types/auth";
 import type { NavigationItem, NavigationSection } from "@/types/navigation";
 
 const candidates: NavigationItem[] = [
+  { title: "Learning-area assignments", href: "/workspace/admin/school/learning-area-assignments", absolute: true, icon: BookOpen },
   { title: "Learner admission", href: "/workspace/admin/school/learner-admission", absolute: true, icon: GraduationCap, permissions: ["manage_learners"] },
   { title: "Co-curricular", href: "/workspace/admin/school/co-curricular", absolute: true, icon: School, permissions: ["manage_learners"] },
   { title: "Academic setup", href: "/workspace/admin/school/academic-setup", absolute: true, icon: CalendarDays, roles: ["Headteacher", "Principal"], permissions: ["access_school_leadership_portal", "manage_academics"] },
@@ -35,6 +36,9 @@ export function navigationForUser(user: AuthUser | null): NavigationSection[] {
   const items = candidates
     .filter((item) => !["Academic setup", "Invite school users", "Co-curricular", "Learner admission"].includes(item.title) || user.scope === "school")
     .filter((item) => !["Schools", "School registrations", "Subscription catalog"].includes(item.title) || user.scope === "platform")
+    .filter((item) => item.title !== "Learning-area assignments" || (user.scope === "school" &&
+      ((roles.has("Headteacher") && permissions.has("manage_academics")) ||
+        (roles.has("School Admin") && permissions.has("access_administrator_portal")))))
     .filter((item) => item.href !== "#readiness" || (user.scope === "school" && dashboard === "/workspace/admin/school"))
     .filter((item) => navigationItemVisible(item, [...roles], [...permissions]))
     .map((item) => ({ ...item, href: item.absolute ? item.href : `${dashboard}${item.href}` }));
