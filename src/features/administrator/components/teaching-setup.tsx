@@ -11,6 +11,11 @@ import { normalizeApiError } from "@/services/api/api-error";
 import { useAuthStore } from "@/store/auth-store";
 
 const endpoint = "/teacher-assignments/workspace";
+const appointmentsEndpoint = "/teacher-assignments/class-teacher-appointments";
+type Appointment = {
+  id: string; teacher: string; grade: string; stream: string; year: string; term: string;
+  starts_on: string; ends_on: string; temporary_until: string | null; status: string;
+};
 type Choice = { id: string; label: string };
 type Options = {
   teachers: { id: string; first_name: string; last_name: string }[];
@@ -61,6 +66,17 @@ function AssignmentForm({ identity, classTeacher }: { identity: string; classTea
     },
   });
 
+  const appointments = useQuery({
+    queryKey: useScopedQueryKey(["class-teacher-appointments"]),
+    enabled: classTeacher,
+    queryFn: async ({ signal }): Promise<Appointment[]> => {
+      if (!sameIdentity()) throw new Error("The school session has changed.");
+      const { data } = await apiClient.get(appointmentsEndpoint, { signal });
+      if (!sameIdentity() || data.success !== true || !Array.isArray(data.data)) throw new Error("Saved appointments are unavailable.");
+      return data.data;
+    },
+  });
+
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (saving.current || !sameIdentity()) return;
@@ -71,12 +87,13 @@ function AssignmentForm({ identity, classTeacher }: { identity: string; classTea
     setError("");
     setNotice("");
     try {
-      const { data } = await apiClient.post(classTeacher ? "/teacher-assignments/class-teacher-appointments" : endpoint, { ...fields, stream_id: fields.stream_id || null });
+      const { data } = await apiClient.post(classTeacher ? appointmentsEndpoint : endpoint, { ...fields, stream_id: fields.stream_id || null });
       if (sameIdentity() && data.success === true) {
         form.reset();
         setGrade("");
         setYear("");
         setNotice(classTeacher ? "Class teacher appointed." : "Learning area assigned.");
+        if (classTeacher) await appointments.refetch();
       }
     } catch (failure) {
       if (!sameIdentity()) return;
@@ -94,7 +111,7 @@ function AssignmentForm({ identity, classTeacher }: { identity: string; classTea
   const gradeAreas = areas.filter(item => item.grade_id === grade);
   const yearTerms = terms.filter(item => item.academic_year_id === year);
 
-  return <form className="space-y-4" onSubmit={save}>
+  return <><form className="space-y-4" onSubmit={save}>
     {!teachers.length && <p>Set up a teacher profile in Staff access first.</p>}
     {!classTeacher && !areas.length && <p>Configure learning areas for your grades before assigning a teacher.</p>}
     <fieldset disabled={busy} className="grid gap-4 md:grid-cols-2">
@@ -112,7 +129,20 @@ function AssignmentForm({ identity, classTeacher }: { identity: string; classTea
     {error && <p role="alert">{error}</p>}
     {notice && <p role="status">{notice}</p>}
     <Button type="submit" disabled={busy || !teachers.length || (!classTeacher && !gradeAreas.length) || !yearTerms.length}>{busy ? "Saving…" : classTeacher ? "Appoint class teacher" : "Assign learning area"}</Button>
-  </form>;
+  </form>
+    {classTeacher && <section className="mt-6 space-y-3 border-t pt-4">
+      <h3 className="font-semibold">Saved appointments</h3>
+      {appointments.isPending && <p role="status">Loading saved appointments…</p>}
+      {appointments.isError && <p role="alert">Saved appointments could not be loaded. <Button onClick={() => void appointments.refetch()}>Retry</Button></p>}
+      {appointments.isSuccess && (appointments.data.length ? <ul className="divide-y rounded-md border">
+        {appointments.data.map(item => <li className="grid gap-1 p-3" key={item.id}>
+          <p className="font-medium">{item.teacher} · {item.grade} / {item.stream}</p>
+          <p className="text-sm">{item.year} · {item.term} · {item.starts_on} to {item.ends_on}</p>
+          <p className="text-sm">{item.temporary_until ? `Temporary cover through ${item.temporary_until}` : "Regular appointment"} · {item.status}</p>
+        </li>)}
+      </ul> : <p>No class-teacher appointments saved yet.</p>)}
+    </section>}
+  </>;
 }
 
 export function TeachingSetup({ classTeacher = false }: { classTeacher?: boolean }) {
