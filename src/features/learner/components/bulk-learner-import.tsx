@@ -6,7 +6,10 @@ import { Input } from "@/components/ui/input";
 import { apiClient } from "@/services/api/api-client";
 import { normalizeApiError } from "@/services/api/api-error";
 
-const headers = ["admission_no", "first_name", "middle_name", "last_name", "gender", "date_of_birth", "mode_of_study", "assessment_no", "upi", "kemis_no"] as const;
+const headers = ["admission_no", "first_name", "middle_name", "last_name", "gender", "date_of_birth", "mode_of_study", "assessment_no", "upi", "kemis_no",
+  "guardian_first_name", "guardian_last_name", "guardian_phone", "guardian_relationship", "guardian_email",
+  "emergency_first_name", "emergency_last_name", "emergency_phone", "emergency_relationship", "emergency_email",
+] as const;
 type LearnerRow = { row: number } & Record<(typeof headers)[number], string>;
 type ClassChoice = { id: string; label: string };
 const endpoint = "/teacher/class-teacher/bulk-admission";
