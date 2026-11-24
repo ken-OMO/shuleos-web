@@ -57,11 +57,12 @@ test("public registration stays pending until the platform owner explicitly conf
   await expect(page.getByRole("heading", { name: "Mansoor Academy", exact: true })).toBeVisible();
   await expect(page.getByText("Requested package: Basic")).toBeVisible();
   await expect(page.getByText("Requested add-ons: Transport")).toBeVisible();
-  await page.getByRole("button", { name: "Approve request", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Initiate payment", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Allow 14-day trial", exact: true }).click();
   expect(approvalCalls).toBe(0);
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
   expect(approvalCalls).toBe(0);
-  await page.getByRole("button", { name: "Approve request", exact: true }).click();
+  await page.getByRole("button", { name: "Allow 14-day trial", exact: true }).click();
   await page.getByRole("button", { name: "Confirm approval", exact: true }).click();
   await expect(page.getByText("No pending requests were returned.", { exact: true })).toBeVisible();
   expect(approvalCalls).toBe(1);

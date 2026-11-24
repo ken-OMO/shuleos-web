@@ -7,6 +7,7 @@ import { asRecord } from "@/features/dashboard/dashboard-contract";
 
 export interface RegistrationInput {
   school_name: string; operating_mode: string;
+  mpesa_payer_phone?: string | null;
   package_id?: string; trial_boarding?: boolean; trial_transport?: boolean; trial_elections?: boolean;
   admin: { first_name: string; last_name: string; email: string };
   email?: string; phone?: string; physical_address?: string; postal_address?: string;
