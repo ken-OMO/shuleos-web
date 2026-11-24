@@ -169,6 +169,24 @@ function AdmissionForm({ schoolId, classTeacher }: { schoolId: string; classTeac
         </label>;
       })}
     </fieldset>}
+    <fieldset disabled={busy} className="grid gap-4 md:grid-cols-2">
+      <legend className="mb-3 font-semibold">Primary parent or guardian</legend>
+      <label>First name<Input name="guardian_first_name" required maxLength={100} /></label>
+      <label>Last name<Input name="guardian_last_name" required maxLength={100} /></label>
+      <label>Relationship to learner<Input name="guardian_relationship" required maxLength={50} /></label>
+      <label>Phone number<Input name="guardian_phone" type="tel" required maxLength={20} /></label>
+      <label>Email (optional)<Input name="guardian_email" type="email" maxLength={255} /></label>
+    </fieldset>
+    <details>
+      <summary className="cursor-pointer font-semibold">Separate emergency contact (optional)</summary>
+      <fieldset disabled={busy} className="mt-3 grid gap-4 md:grid-cols-2">
+        <label>First name<Input name="emergency_first_name" maxLength={100} /></label>
+        <label>Last name<Input name="emergency_last_name" maxLength={100} /></label>
+        <label>Relationship to learner<Input name="emergency_relationship" maxLength={50} /></label>
+        <label>Phone number<Input name="emergency_phone" type="tel" maxLength={20} /></label>
+        <label>Email (optional)<Input name="emergency_email" type="email" maxLength={255} /></label>
+      </fieldset>
+    </details>
     {!classTeacher && groups.isError && normalizeApiError(groups.error).status !== 403 &&
       <p role="alert">Co-curricular choices could not be loaded. <Button type="button" variant="outline" onClick={() => void groups.refetch()}>Retry</Button></p>}
     {error && <p role="alert" className="text-destructive">{error}</p>}
