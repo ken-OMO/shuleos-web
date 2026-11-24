@@ -4,7 +4,6 @@ import Link from "next/link";
 import { assertSchool, canManageCalendar, loadGradeSetup } from "@/features/leadership/components/grades-by-education-level";
 import { useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { isAxiosError } from "axios";
 import { ApiError } from "@/services/api/api-error";
 import { DashboardHeader, DashboardPage, DashboardSection } from "@/components/dashboard/dashboard-primitives";
 import { Button } from "@/components/ui/button";
@@ -52,13 +51,13 @@ async function listEntries(resource: Resource, schoolId: string, signal: AbortSi
 }
 
 function saveError(error: unknown) {
-  if (isAxiosError(error) && error.response?.status === 422) {
-    const fields = asRecord(asRecord(error.response.data).errors);
+  if (error instanceof ApiError && error.status === 422) {
+    const fields = error.validationErrors;
     const messages = Object.values(fields).flatMap((value) => Array.isArray(value) ? value : [])
       .filter((value): value is string => typeof value === "string");
     return messages.join(" ") || "Review the calendar details and try again.";
   }
-  if (isAxiosError(error) && error.response?.status === 403) {
+  if (error instanceof ApiError && error.status === 403) {
     return "Changes are unavailable. Check your permissions and school subscription status.";
   }
   return "The save could not be confirmed. Refresh the list before trying again.";
@@ -171,7 +170,7 @@ function CalendarSection({ resource, schoolId, years = [] }: {
             </select>
           </label>}
           <label className="grid gap-1 text-sm">{label} name
-            <Input name="name" defaultValue={editing?.name} maxLength={50} required />
+            <Input name="name" defaultValue={editing?.name} maxLength={isTerm ? 50 : 20} required />
           </label>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1 text-sm">Start date<Input type="date" name="start" defaultValue={editing?.start} required /></label>
