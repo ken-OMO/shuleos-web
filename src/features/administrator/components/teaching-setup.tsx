@@ -13,7 +13,7 @@ import { useAuthStore } from "@/store/auth-store";
 const endpoint = "/teacher-assignments/workspace";
 const appointmentsEndpoint = "/teacher-assignments/class-teacher-appointments";
 type Appointment = {
-  id: string; teacher: string; grade: string; stream: string; year: string; term: string;
+  id: string; active: boolean; teacher: string; grade: string; stream: string; year: string; term: string;
   starts_on: string; ends_on: string; temporary_until: string | null; status: string;
 };
 type Choice = { id: string; label: string };
@@ -50,6 +50,7 @@ function AssignmentForm({ identity, classTeacher }: { identity: string; classTea
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const saving = useRef(false);
+  const [removal, setRemoval] = useState<Appointment | null>(null);
 
   function sameIdentity() {
     const state = useAuthStore.getState();
@@ -105,6 +106,29 @@ function AssignmentForm({ identity, classTeacher }: { identity: string; classTea
     }
   }
 
+  async function removeAppointment() {
+    if (!removal || saving.current || !sameIdentity()) return;
+    saving.current = true;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const { data } = await apiClient.delete(`${appointmentsEndpoint}/${encodeURIComponent(removal.id)}`);
+      if (!sameIdentity()) return;
+      if (data.success !== true || data.data?.id !== removal.id || data.data?.active !== false) {
+        throw new Error("Removal could not be confirmed. Refresh the list before retrying.");
+      }
+      setRemoval(null);
+      setNotice("Class teacher removed.");
+      await appointments.refetch();
+    } catch (failure) {
+      if (sameIdentity()) setError(normalizeApiError(failure).message);
+    } finally {
+      saving.current = false;
+      setBusy(false);
+    }
+  }
+
   if (options.isPending) return <p role="status">Loading assignment choices…</p>;
   if (options.isError) return <p role="alert">Assignment choices could not be loaded. <Button onClick={() => void options.refetch()}>Retry</Button></p>;
   const { teachers, grades, streams, years, terms, areas } = options.data;
@@ -128,7 +152,7 @@ function AssignmentForm({ identity, classTeacher }: { identity: string; classTea
     </fieldset>
     {error && <p role="alert">{error}</p>}
     {notice && <p role="status">{notice}</p>}
-    <Button type="submit" disabled={busy || !teachers.length || (!classTeacher && !gradeAreas.length) || !yearTerms.length}>{busy ? "Saving…" : classTeacher ? "Appoint class teacher" : "Assign learning area"}</Button>
+    <Button type="submit" disabled={busy || removal !== null || !teachers.length || (!classTeacher && !gradeAreas.length) || !yearTerms.length}>{busy ? "Saving…" : classTeacher ? "Appoint class teacher" : "Assign learning area"}</Button>
   </form>
     {classTeacher && <section className="mt-6 space-y-3 border-t pt-4">
       <h3 className="font-semibold">Saved appointments</h3>
@@ -139,6 +163,15 @@ function AssignmentForm({ identity, classTeacher }: { identity: string; classTea
           <p className="font-medium">{item.teacher} · {item.grade} / {item.stream}</p>
           <p className="text-sm">{item.year} · {item.term} · {item.starts_on} to {item.ends_on}</p>
           <p className="text-sm">{item.temporary_until ? `Temporary cover through ${item.temporary_until}` : "Regular appointment"} · {item.status}</p>
+          {item.active && <Button type="button" variant="outline" className="w-fit" disabled={busy || removal !== null}
+            onClick={() => { setError(""); setNotice(""); setRemoval(item); }}>Remove class teacher</Button>}
+          {removal?.id === item.id && <div role="group" aria-label="Confirm class-teacher removal" className="space-y-2">
+            <p>Remove {item.teacher} from {item.grade} / {item.stream}? This ends admission access from this appointment.</p>
+            <div className="flex gap-2">
+              <Button type="button" variant="destructive" disabled={busy} onClick={() => void removeAppointment()}>Confirm removal</Button>
+              <Button type="button" variant="outline" disabled={busy} onClick={() => setRemoval(null)}>Cancel</Button>
+            </div>
+          </div>}
         </li>)}
       </ul> : <p>No class-teacher appointments saved yet.</p>)}
     </section>}
