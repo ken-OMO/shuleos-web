@@ -101,8 +101,8 @@ function StaffAccessForIdentity() {
         <h3 className="font-semibold">Set up {teacher.name}</h3>
         <p>Enter the staff and TSC numbers to link a matching profile or create one for this login.</p>
         <fieldset disabled={busy} className="grid gap-3 sm:grid-cols-2">
-          <label>Staff number<Input name="staff_no" required maxLength={100} /></label>
-          <label>TSC number<Input name="tsc_no" required maxLength={100} /></label>
+          <label>Staff number<Input name="staff_no" required maxLength={50} /></label>
+          <label>TSC number<Input name="tsc_no" required maxLength={50} /></label>
         </fieldset>
         <div className="flex gap-2">
           <Button type="submit" disabled={busy}>Save teacher profile</Button>
