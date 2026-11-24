@@ -49,3 +49,17 @@ export async function changeStaffAccountAccess(
     throw new Error("Account change unconfirmed. Refresh before retrying.");
   }
 }
+
+
+export async function setUpTeacher(userId: string, details: { staff_no: string; tsc_no: string }) {
+  const schoolId = school();
+  const actorId = useAuthStore.getState().user?.id;
+  const { data } = await apiClient.put(
+    `/admin/school/staff-access/${encodeURIComponent(userId)}/teacher-profile`,
+    details,
+  );
+  if (school() !== schoolId || useAuthStore.getState().user?.id !== actorId || data.success !== true
+    || data.data?.school_id !== schoolId || data.data?.user_id !== userId || typeof data.data?.teacher_id !== "string") {
+    throw new Error("Teacher setup could not be confirmed.");
+  }
+}
