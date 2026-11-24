@@ -10,8 +10,8 @@ import { apiClient } from "@/services/api/api-client";
 import { normalizeApiError } from "@/services/api/api-error";
 import { useAuthStore } from "@/store/auth-store";
 
-type Grade = { id: string; grade_name: string; grade_number: number | null; active: boolean };
-type Stream = { id: string; stream_name: string; grade: { id: string }; active: boolean };
+type Grade = { id: string; grade_name: string; grade_number: number };
+type Stream = { id: string; stream_name: string; grade_id: string };
 type Group = { id: string; name: string; kind: string; archived_at: string | null };
 
 const groupKinds = { club: "Club", house: "House", society: "Society" };
@@ -42,32 +42,26 @@ function AdmissionForm({ schoolId }: { schoolId: string }) {
     return canAdmit(state) && state.user?.school?.id === schoolId && state.user?.id === identity;
   }
 
-  async function load<T>(path: string, signal: AbortSignal): Promise<T[]> {
+  async function load<T>(path: string, signal: AbortSignal): Promise<T> {
     if (!isCurrentSchool()) throw new Error("The school session has changed.");
     const { data } = await apiClient.get(path, { signal });
     if (!isCurrentSchool()) throw new Error("The school session has changed.");
-    if (data.success !== true || !Array.isArray(data.data)) throw new Error("Admission choices are unavailable.");
+    if (data.success !== true || !data.data) throw new Error("Admission choices are unavailable.");
     return data.data;
   }
 
   const placement = useQuery({
     queryKey: useScopedQueryKey(["learner-admission", "placement"]),
-    queryFn: async ({ signal }) => {
-      const [grades, streams] = await Promise.all([load<Grade>("/grades", signal), load<Stream>("/streams", signal)]);
-      return {
-        grades: grades.filter(grade => grade.active && grade.grade_number !== null),
-        streams: streams.filter(stream => stream.active),
-      };
-    },
+    queryFn: ({ signal }) => load<{ grades: Grade[]; streams: Stream[] }>("/learners/admission-options", signal),
   });
   const groups = useQuery({
     queryKey: useScopedQueryKey(["co-curricular", "groups"]),
-    queryFn: ({ signal }) => load<Group>("/co-curricular/groups", signal),
+    queryFn: ({ signal }) => load<Group[]>("/co-curricular/groups", signal),
     retry: false,
   });
 
   const grade = placement.data?.grades.find(item => item.id === gradeId);
-  const streams = placement.data?.streams.filter(item => item.grade?.id === gradeId) ?? [];
+  const streams = placement.data?.streams.filter(item => item.grade_id === gradeId) ?? [];
   const assessmentRequired = grade != null && Number(grade.grade_number) >= 3 && Number(grade.grade_number) <= 9;
   const activeGroups = groups.isSuccess ? groups.data.filter(group => !group.archived_at) : [];
 
