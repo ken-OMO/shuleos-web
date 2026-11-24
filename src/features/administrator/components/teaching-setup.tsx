@@ -148,7 +148,6 @@ function AssignmentForm({ identity, classTeacher }: { identity: string; classTea
       <SelectField key={grade + ":area"} name="learning_area_id" label="Learning area" choices={gradeAreas.map(item => ({ id: item.id, label: item.learning_area_name }))} />
       <label>Lessons per week<Input name="lessons_per_week" type="number" min={1} max={20} required /></label>
       </>}
-      {classTeacher && <label>Temporary cover ends (optional)<Input name="temporary_until" type="date" /></label>}
     </fieldset>
     {error && <p role="alert">{error}</p>}
     {notice && <p role="status">{notice}</p>}
