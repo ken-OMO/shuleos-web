@@ -7,16 +7,27 @@ test("public registration stays pending until the platform owner explicitly conf
   let approved = false, approvalCalls = 0, submitted = false;
   await page.route("http://127.0.0.1:8000/api/**", async route => {
     const request = route.request(), path = new URL(request.url()).pathname;
+    if (path === "/api/school-registration-packages") {
+      expect(request.headers().authorization).toBeUndefined();
+      return route.fulfill({ json: { success: true, data: [{ id: "package-id", package_name: "Basic", description: null, amount: "7100.00", duration_months: 4, features: ["Report cards"] }] } });
+    }
+    if (path === "/api/school-registration-addon-prices") {
+      expect(request.headers().authorization).toBeUndefined();
+      return route.fulfill({ json: { success: true, data: [
+        { code: "transport", name: "Transport", amount: "1500.00", duration_months: 4 },
+      ] } });
+    }
     if (path === "/api/school-registration-requests") {
       expect(request.headers().authorization).toBeUndefined(); submitted = true;
-      expect(request.postDataJSON().school_name).toBe("Mansoor Academy");
+      expect(request.postDataJSON()).toMatchObject({ school_name: "Mansoor Academy", package_id: "package-id",
+        trial_boarding: false, trial_transport: true, trial_elections: false });
       return route.fulfill({ status: 202, json: { success: true } });
     }
     if (path === "/api/platform/auth/login") return route.fulfill({ status: 202, json: { success: true, data: { authenticated: false, activation_required: false, challenge_id: "review-challenge", challenge_token: "synthetic", expires_in: 600 } } });
     if (path === "/api/platform/auth/verify-otp") return route.fulfill({ json: { success: true, token: "owner-token", user: owner, data: { user: owner, token: "owner-token" } } });
     if (path === "/api/auth/me") return route.fulfill({ json: { success: true, data: { user: owner } } });
     if (path === "/api/admin/dashboard/platform") return route.fulfill({ json: { success: true, data: { scope: "platform", total_schools: 0 } } });
-    if (path === "/api/admin/platform/school-registration-requests") return route.fulfill({ json: { success: true, data: { current_page: 1, last_page: 1, total: approved ? 0 : 1, data: approved ? [] : [{ id: "request-id", school_name: "Mansoor Academy", operating_mode: "day", admin_first_name: "Amina", admin_last_name: "Hassan", admin_email: "amina@example.test", status: "pending" }] } } });
+    if (path === "/api/admin/platform/school-registration-requests") return route.fulfill({ json: { success: true, data: { current_page: 1, last_page: 1, total: approved ? 0 : 1, data: approved ? [] : [{ id: "request-id", school_name: "Mansoor Academy", operating_mode: "day", admin_first_name: "Amina", admin_last_name: "Hassan", admin_email: "amina@example.test", status: "pending", requested_package_name: "Basic", trial_transport: true }] } } });
     if (path.endsWith("/request-id/approve")) { approvalCalls++; approved = true; return route.fulfill({ json: { success: true, data: { id: "request-id", status: "approved", school_id: "new-school" } } }); }
     return route.fulfill({ status: 403, json: { success: false } });
   });
@@ -26,6 +37,11 @@ test("public registration stays pending until the platform owner explicitly conf
   await page.getByLabel("Administrator last name", { exact: true }).fill("Hassan");
   await page.getByLabel("Administrator email", { exact: true }).fill("amina@example.test");
   await page.getByLabel("Operating mode", { exact: true }).selectOption("day");
+  await page.getByLabel("Subscription package").selectOption("package-id");
+  await expect(page.getByText("Report cards", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Boarding", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Student Council Elections")).not.toBeChecked();
+  await page.getByLabel(/Transport.*1,500.*4 months/).check();
   await page.getByRole("button", { name: "Submit registration request", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Request received" })).toBeVisible();
   expect(submitted).toBe(true); expect(approvalCalls).toBe(0);
@@ -39,6 +55,8 @@ test("public registration stays pending until the platform owner explicitly conf
   await page.getByRole("button", { name: "Verify code", exact: true }).click();
   await page.getByRole("link", { name: "School registrations", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Mansoor Academy", exact: true })).toBeVisible();
+  await expect(page.getByText("Requested package: Basic")).toBeVisible();
+  await expect(page.getByText("Requested add-ons: Transport")).toBeVisible();
   await page.getByRole("button", { name: "Approve request", exact: true }).click();
   expect(approvalCalls).toBe(0);
   await page.getByRole("button", { name: "Cancel", exact: true }).click();

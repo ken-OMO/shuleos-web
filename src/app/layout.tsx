@@ -19,6 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="h-full antialiased">
       <body className="min-h-full flex flex-col">
+        <div aria-hidden="true" className="kenyan-flag-ribbon" />
         <AppProvider>{children}</AppProvider>
       </body>
     </html>

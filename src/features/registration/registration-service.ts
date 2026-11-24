@@ -7,6 +7,7 @@ import { asRecord } from "@/features/dashboard/dashboard-contract";
 
 export interface RegistrationInput {
   school_name: string; operating_mode: string;
+  package_id?: string; trial_boarding?: boolean; trial_transport?: boolean; trial_elections?: boolean;
   admin: { first_name: string; last_name: string; email: string };
   email?: string; phone?: string; physical_address?: string; postal_address?: string;
 }
@@ -15,10 +16,40 @@ export interface Registration extends Omit<RegistrationInput, "admin" | "email" 
   id: string; status: "pending" | "approved" | "rejected"; school_id: string | null;
   admin_first_name: string; admin_last_name: string; admin_email: string; created_at: string;
   review_reason: string | null;
+  requested_package_name?: string | null;
 }
 export interface RegistrationPage { data: Registration[]; current_page: number; last_page: number; total: number }
 // Public submissions never carry the currently signed-in user's bearer token.
 export const publicRegistrationClient = axios.create({ baseURL: environment.apiBaseUrl, timeout: 15_000, headers: { Accept: "application/json" } });
+export interface RegistrationPackage {
+  elections_included?: boolean;
+  id: string;
+  package_name: string;
+  description: string | null;
+  amount: string | number;
+  duration_months: number;
+  features: string[];
+}
+
+export interface RegistrationAddon {
+  code: "boarding" | "transport" | "elections";
+  name: string;
+  amount: string | number | null;
+  duration_months: number | null;
+}
+
+export async function registrationAddonPrices(signal?: AbortSignal): Promise<RegistrationAddon[]> {
+  const { data } = await publicRegistrationClient.get("/school-registration-addon-prices", { signal });
+  if (data.success !== true || !Array.isArray(data.data)) throw new Error("Add-on prices unavailable.");
+  return data.data;
+}
+
+export async function registrationPackages(signal?: AbortSignal): Promise<RegistrationPackage[]> {
+  const { data } = await publicRegistrationClient.get("/school-registration-packages", { signal });
+  if (data.success !== true || !Array.isArray(data.data)) throw new Error("Packages unavailable.");
+  return data.data;
+}
+
 export async function submitRegistration(input: RegistrationInput) {
   try {
     const response = await publicRegistrationClient.post("/school-registration-requests", input);

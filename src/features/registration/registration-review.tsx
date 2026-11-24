@@ -28,6 +28,12 @@ export function RegistrationReview() {
         : <><ul className="mt-4 divide-y">{query.data.data.map(row => <li key={row.id} className="space-y-2 py-5">
           <h3 className="break-words font-semibold">{row.school_name}</h3>
           <p className="text-sm">{row.operating_mode.replaceAll("_", " ")} · {row.status}</p>
+          <p className="text-sm">Requested package: {row.requested_package_name ?? "None selected"}</p>
+          <p className="text-sm">Requested add-ons: {[
+            row.trial_boarding && "Boarding",
+            row.trial_transport && "Transport",
+            row.trial_elections && "Student Council Elections",
+          ].filter(Boolean).join(", ") || "None"}</p>
           <p className="break-words text-sm">Administrator: {row.admin_first_name} {row.admin_last_name} · {row.admin_email}</p>
           {[row.email, row.phone, row.physical_address, row.postal_address].filter(Boolean).map((value, index) => <p key={index} className="break-words text-sm text-muted-foreground">{value}</p>)}
           {row.review_reason ? <p className="text-sm">Review reason: {row.review_reason}</p> : null}
