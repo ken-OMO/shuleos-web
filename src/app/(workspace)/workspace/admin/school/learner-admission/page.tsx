@@ -113,9 +113,9 @@ function AdmissionForm({ schoolId }: { schoolId: string }) {
       {fields.map(([name, label, maxLength, required]) => <label key={name}>{label}
         <Input name={name} maxLength={maxLength} required={required} />
       </label>)}
-      <label>Gender (optional)<Input name="gender" maxLength={20} /></label>
-      <label>Date of birth (optional)<Input name="date_of_birth" type="date" /></label>
-      <label>Admission date (optional)<Input name="admission_date" type="date" /></label>
+      <label>Gender<Input name="gender" maxLength={20} required /></label>
+      <label>Date of birth<Input name="date_of_birth" type="date" required /></label>
+      <p className="text-sm text-muted-foreground md:col-span-2">Admission date is set to today when you save.</p>
     </fieldset>
     <fieldset disabled={busy} className="grid gap-4 md:grid-cols-2">
       <legend className="mb-3 font-semibold">School placement</legend>
