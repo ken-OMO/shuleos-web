@@ -1,14 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { teacherAssignmentLabel } from "../services/teacher-assignment-label";
+import { TeachingAssignmentList } from "./teaching-assignment-list";
 import {
-  BookOpen,
   CalendarDays,
   CheckCircle2,
   ClipboardList,
   Clock3,
-  UsersRound,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,50 +24,9 @@ import {
   useTeacherTimetable,
 } from "../hooks/use-teacher-dashboard";
 import type {
-  TeacherAssignment,
   TeacherTask,
   TeacherTimetableEntry,
 } from "../types/workspace";
-
-function recordText(
-  record: Record<string, unknown>,
-  ...keys: string[]
-): string | null {
-  for (const key of keys) {
-    const value = record[key];
-
-    if (typeof value === "string" && value.trim()) {
-      return value;
-    }
-
-    if (typeof value === "number" && Number.isFinite(value)) {
-      return String(value);
-    }
-  }
-
-  return null;
-}
-
-function assignmentTitle(assignment: TeacherAssignment, index: number) {
-  return (
-    teacherAssignmentLabel(assignment) ??
-    recordText(
-      assignment,
-      "learning_area_name",
-      "subject_name",
-      "subject",
-      "name",
-      "title",
-    ) ?? `Teaching assignment ${index + 1}`
-  );
-}
-
-function assignmentDetail(assignment: TeacherAssignment) {
-  const grade = recordText(assignment, "grade_name", "grade");
-  const stream = recordText(assignment, "stream_name", "stream", "class_name");
-
-  return [grade, stream].filter(Boolean).join(" · ") || "Assigned teaching scope";
-}
 
 function TaskList({ tasks }: { tasks: TeacherTask[] }) {
   if (!tasks.length) {
@@ -198,46 +155,11 @@ export function TeacherAssignmentsView() {
         onRefresh={() => void query.refetch()}
       />
 
-      <DashboardSection
-        title="My assignments"
-        description={`${assignments.length} assignment${assignments.length === 1 ? "" : "s"} returned.`}
-      >
-        {!assignments.length ? (
-          <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-            No teaching assignments were returned.
-          </div>
-        ) : (
-          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {assignments.map((assignment, index) => (
-              <li
-                key={assignment.id}
-                className="rounded-xl border bg-card p-4"
-              >
-                <div className="flex items-start gap-3">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                    <BookOpen className="size-4" />
-                  </span>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium">
-                      {assignmentTitle(assignment, index)}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {assignmentDetail(assignment)}
-                    </p>
-
-                    {typeof assignment.learner_count === "number" ? (
-                      <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <UsersRound className="size-3.5" />
-                        {assignment.learner_count} learners
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+      <DashboardSection title="My assignments">
+        <TeachingAssignmentList
+          active={assignments.filter(item => item.assignment_status !== "upcoming")}
+          upcoming={assignments.filter(item => item.assignment_status === "upcoming")}
+        />
       </DashboardSection>
     </DashboardPage>
   );

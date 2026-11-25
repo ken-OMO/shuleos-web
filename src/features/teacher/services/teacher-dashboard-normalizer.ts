@@ -11,6 +11,8 @@ export function normalizeTeacherDashboard(value: unknown): TeacherDashboard {
     teacher: record(raw.teacher),
     currentPeriod: record(raw.current_period),
     assignments: records(raw.assignments, 10),
+    upcomingAssignments: records(raw.upcoming_assignments, 10),
+    weeklyTeachingLoad: typeof raw.weekly_teaching_load === "number" ? raw.weekly_teaching_load : null,
     todaysTimetable: records(raw.todays_timetable, 10),
     analytics: record(raw.analytics),
     announcements: records(raw.announcements, 10),
