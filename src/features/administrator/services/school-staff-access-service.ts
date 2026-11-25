@@ -62,4 +62,5 @@ export async function setUpTeacher(userId: string, details: { staff_no: string; 
     || data.data?.school_id !== schoolId || data.data?.user_id !== userId || typeof data.data?.teacher_id !== "string") {
     throw new Error("Teacher setup could not be confirmed.");
   }
+  return data.data.teacher_id as string;
 }

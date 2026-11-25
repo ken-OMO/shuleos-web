@@ -32,18 +32,18 @@ function canAssign(state: ReturnType<typeof useAuthStore.getState>) {
       (state.hasRole("School Admin") && state.hasPermission("access_administrator_portal")));
 }
 
-function SelectField({ name, label, choices, optional, change }: {
-  name: string; label: string; choices: Choice[]; optional?: boolean; change?: (value: string) => void;
+function SelectField({ name, label, choices, optional, change, initial }: {
+  name: string; label: string; choices: Choice[]; optional?: boolean; initial?: string; change?: (value: string) => void;
 }) {
   return <label className="grid gap-1">{label}
-    <select name={name} required={!optional} onChange={event => change?.(event.target.value)} className="rounded-md border bg-background p-2">
+    <select name={name} defaultValue={initial} required={!optional} onChange={event => change?.(event.target.value)} className="rounded-md border bg-background p-2">
       <option value="">{optional ? "All streams" : "Select " + label.toLowerCase()}</option>
       {choices.map(choice => <option key={choice.id} value={choice.id}>{choice.label}</option>)}
     </select>
   </label>;
 }
 
-function AssignmentForm({ identity, classTeacher }: { identity: string; classTeacher: boolean }) {
+function AssignmentForm({ identity, classTeacher, teacherId }: { identity: string; classTeacher: boolean; teacherId?: string }) {
   const [grade, setGrade] = useState("");
   const [year, setYear] = useState("");
   const [busy, setBusy] = useState(false);
@@ -139,7 +139,7 @@ function AssignmentForm({ identity, classTeacher }: { identity: string; classTea
     {!teachers.length && <p>Set up a teacher profile in Staff access first.</p>}
     {!classTeacher && !areas.length && <p>Configure learning areas for your grades before assigning a teacher.</p>}
     <fieldset disabled={busy} className="grid gap-4 md:grid-cols-2">
-      <SelectField name="teacher_id" label="Teacher" choices={teachers.map(item => ({ id: item.id, label: `${item.first_name} ${item.last_name}` }))} />
+      <SelectField name="teacher_id" label="Teacher" initial={teachers.some(item => item.id === teacherId) ? teacherId : undefined} choices={teachers.map(item => ({ id: item.id, label: `${item.first_name} ${item.last_name}` }))} />
       <SelectField name="academic_year_id" label="Academic year" change={setYear} choices={years.map(item => ({ id: item.id, label: item.year_name }))} />
       <SelectField key={year} name="term_id" label="Term" choices={yearTerms.map(item => ({ id: item.id, label: item.term_name }))} />
       <SelectField name="grade_id" label="Grade" change={setGrade} choices={grades.map(item => ({ id: item.id, label: item.grade_name }))} />
@@ -177,14 +177,14 @@ function AssignmentForm({ identity, classTeacher }: { identity: string; classTea
   </>;
 }
 
-export function TeachingSetup({ classTeacher = false }: { classTeacher?: boolean }) {
+export function TeachingSetup({ classTeacher = false, teacherId }: { classTeacher?: boolean; teacherId?: string }) {
   const allowed = useAuthStore(canAssign);
   const user = useAuthStore(state => state.user);
   const identity = `${user?.school?.id}:${user?.id}`;
   return <DashboardPage>
     <DashboardHeader title={classTeacher ? "Class-teacher appointments" : "Learning-area assignments"} role="School" description={classTeacher ? "Appoint a teacher to oversee a class for a term." : "Assign teachers to learning areas for a grade, stream and term."} />
     <DashboardSection title="New assignment">
-      {allowed ? <AssignmentForm key={identity} identity={identity} classTeacher={classTeacher} /> : <p role="alert">Teacher assignments are unavailable for your role.</p>}
+      {allowed ? <AssignmentForm key={identity} identity={identity} classTeacher={classTeacher} teacherId={teacherId} /> : <p role="alert">Teacher assignments are unavailable for your role.</p>}
     </DashboardSection>
   </DashboardPage>;
 }
