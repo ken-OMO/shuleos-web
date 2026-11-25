@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardHeader, DashboardPage, DashboardSection } from "@/components/dashboard/dashboard-primitives";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useScopedQueryKey } from "@/features/dashboard/use-scoped-query-key";
 import { apiClient } from "@/services/api/api-client";
@@ -75,21 +76,37 @@ function Roster({ identity }: { identity: string }) {
 
   return <>
     {notice && <p role="status">{notice}</p>}
-    {action && <form onSubmit={save} className="mb-4 space-y-3 rounded border p-4">
+    <Dialog open={action !== null && action.mode !== "archive"} onOpenChange={open => { if (!open && !busy) setAction(null); }}>
+      {action && action.mode !== "archive" && <DialogContent className="max-w-xl">
+        <DialogHeader className="pr-10">
+          <DialogTitle>{action.mode === "edit" ? "Edit learner names" : "Learner details"}</DialogTitle>
+          <DialogDescription>{action.learner.admission_no} · {action.learner.grade} / {action.learner.stream}</DialogDescription>
+        </DialogHeader>
+        {action.mode === "edit" ? <form key={action.learner.id} onSubmit={save} className="mt-4 space-y-3">
+          <fieldset disabled={busy} className="grid gap-3">
+            <label>First name<Input name="first_name" defaultValue={action.learner.first_name} required maxLength={100} /></label>
+            <label>Middle name<Input name="middle_name" defaultValue={action.learner.middle_name ?? ""} maxLength={100} /></label>
+            <label>Last name<Input name="last_name" defaultValue={action.learner.last_name} required maxLength={100} /></label>
+          </fieldset>
+          {error && <p role="alert">{error}</p>}
+          <div className="flex gap-2">
+            <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Save names"}</Button>
+            <Button type="button" disabled={busy} variant="outline" onClick={() => setAction(null)}>Cancel</Button>
+          </div>
+        </form> : <div className="mt-4 space-y-3">
+          <p>{[action.learner.first_name, action.learner.middle_name, action.learner.last_name].filter(Boolean).join(" ")}</p>
+          <Button type="button" variant="outline" onClick={() => setAction(null)}>Close</Button>
+        </div>}
+      </DialogContent>}
+    </Dialog>
+    {action?.mode === "archive" && <form onSubmit={save} className="mb-4 space-y-3 rounded border p-4">
       <h3 className="font-semibold">{action.learner.first_name} {action.learner.last_name}</h3>
       <p>{action.learner.admission_no} · {action.learner.grade} / {action.learner.stream}</p>
-      {action.mode === "edit" && <fieldset disabled={busy} className="grid gap-3 md:grid-cols-3">
-        <label>First name<Input name="first_name" defaultValue={action.learner.first_name} required maxLength={100} /></label>
-        <label>Middle name<Input name="middle_name" defaultValue={action.learner.middle_name ?? ""} maxLength={100} /></label>
-        <label>Last name<Input name="last_name" defaultValue={action.learner.last_name} required maxLength={100} /></label>
-      </fieldset>}
-      {action.mode === "archive" && <p>Archive this learner and remove them from the active roster?</p>}
+      <p>Archive this learner and remove them from the active roster?</p>
       {error && <p role="alert">{error}</p>}
       <div className="flex gap-2">
-        {action.mode !== "view" && <Button type="submit" disabled={busy} variant={action.mode === "archive" ? "destructive" : "default"}>
-          {action.mode === "archive" ? "Confirm archive" : "Save names"}
-        </Button>}
-        <Button type="button" disabled={busy} variant="outline" onClick={() => setAction(null)}>{action.mode === "view" ? "Close" : "Cancel"}</Button>
+        <Button type="submit" disabled={busy} variant="destructive">Confirm archive</Button>
+        <Button type="button" disabled={busy} variant="outline" onClick={() => setAction(null)}>Cancel</Button>
       </div>
     </form>}
     {query.isPending ? <p role="status">Loading learners…</p> :
