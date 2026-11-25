@@ -37,7 +37,7 @@ export function TeachingAssignmentList({ active, upcoming, weeklyLoad }: {
             }
             if (typeof assignment.learner_count === "number") period.push(`${assignment.learner_count} learners`);
             return <li key={String(assignment.id ?? index)} className="py-2">
-              <p className="text-sm font-medium">{teacherAssignmentLabel(assignment) ?? name(assignment.title) ?? "Teaching assignment"}</p>
+              <p className="text-sm font-medium">{teacherAssignmentLabel(assignment) ?? name(assignment.title) ?? name(assignment.name) ?? name(assignment.subject_name) ?? name(assignment.subject) ?? "Teaching assignment"}</p>
               {period.length > 0 && <p className="mt-1 text-xs text-muted-foreground">{period.join(" · ")}</p>}
             </li>;
           })}
