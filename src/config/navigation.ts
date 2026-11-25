@@ -4,6 +4,7 @@ import type { AuthUser } from "@/types/auth";
 import type { NavigationItem, NavigationSection } from "@/types/navigation";
 
 const candidates: NavigationItem[] = [
+  { title: "Dashboard", href: "", icon: LayoutDashboard },
   { title: "My learners", href: "/workspace/teacher/learners", absolute: true, icon: UsersRound, roles: ["Teacher"], permissions: ["access_teacher_portal"] },
   { title: "Class-teacher appointments", href: "/workspace/admin/school/class-teacher-appointments", absolute: true, icon: School },
   { title: "Admit to my class", href: "/workspace/teacher/admission", absolute: true, icon: GraduationCap, roles: ["Teacher"], permissions: ["access_teacher_portal"] },
@@ -14,7 +15,6 @@ const candidates: NavigationItem[] = [
   { title: "Academic setup", href: "/workspace/admin/school/academic-setup", absolute: true, icon: CalendarDays, roles: ["Headteacher", "Principal"], permissions: ["access_school_leadership_portal", "manage_academics"] },
   { title: "Invite school users", href: "/workspace/admin/school/users", absolute: true, icon: School, roles: ["School Admin", "Administrator", "Director", "School Owner"], permissions: ["access_administrator_portal", "create_school_users", "activate_school_users"] },
   { title: "Staff access", href: "/workspace/admin/school/staff-access", absolute: true, icon: UsersRound, roles: ["School Admin", "Administrator", "Director", "School Owner"], permissions: ["access_administrator_portal", "update_school_users", "assign_school_permissions"] },
-  { title: "Dashboard", href: "", icon: LayoutDashboard },
   { title: "Subscription catalog", href: "/workspace/admin/platform/subscription-catalog", icon: Landmark, absolute: true, roles: ["Platform Owner"], permissions: ["access_administrator_portal", "access_platform_administration"] },
   { title: "School registrations", href: "/workspace/admin/platform/registrations", icon: School, absolute: true, roles: ["Platform Owner", "Platform Super Administrator"], permissions: ["access_administrator_portal", "access_platform_administration", "onboard_schools"] },
   { title: "Schools", href: "/workspace/admin/platform/schools", icon: Building2, absolute: true, roles: ["Platform Owner", "Platform Super Administrator"], permissions: ["access_administrator_portal", "access_platform_administration", "manage_school_lifecycle"] },
