@@ -31,7 +31,7 @@ export const teacherDashboardService = {
   async assignments(signal?: AbortSignal): Promise<TeacherAssignment[]> {
     const { data } = await apiClient.get<ApiEnvelope<TeacherAssignment[]>>(
       "/teacher/assignments",
-      { signal },
+      { signal, params: { include_upcoming: 1 } },
     );
 
     return data.data ?? [];
