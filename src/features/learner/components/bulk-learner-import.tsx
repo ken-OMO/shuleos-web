@@ -4,7 +4,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiClient } from "@/services/api/api-client";
-import { normalizeApiError } from "@/services/api/api-error";
+import { ApiError, normalizeApiError } from "@/services/api/api-error";
 
 const headers = ["admission_no", "first_name", "middle_name", "last_name", "gender", "date_of_birth", "mode_of_study", "assessment_no", "upi", "kemis_no",
   "guardian_first_name", "guardian_last_name", "guardian_phone", "guardian_relationship", "guardian_email",
@@ -16,35 +16,41 @@ const endpoint = "/teacher/class-teacher/bulk-admission";
 
 async function readWorkbook(file: File): Promise<LearnerRow[]> {
   if (!file.name.toLowerCase().endsWith(".xlsx") || file.size > 2 * 1024 * 1024) {
-    throw new Error("Choose an Excel .xlsx file no larger than 2 MB.");
+    throw new ApiError("Choose an Excel .xlsx file no larger than 2 MB.");
   }
-  const { default: readExcelFile } = await import("read-excel-file/browser");
-  const sheets = await readExcelFile(file);
+  const sheets = await (async () => {
+    try {
+      const { default: readExcelFile } = await import("read-excel-file/browser");
+      return await readExcelFile(file);
+    } catch {
+      throw new ApiError("ShuleOS could not read this workbook. Open it in Excel, save it as .xlsx, and try again.");
+    }
+  })();
   const data = sheets.find(sheet => sheet.sheet === "Learners")?.data ?? [];
   const [headerRow, ...learnerRows] = data;
   if (!headerRow || headers.some((header, index) => headerRow[index] !== header)
     || headerRow.slice(headers.length).some(value => value !== null)) {
-    throw new Error("Use the ShuleOS template and keep the Learners sheet and column headings.");
+    throw new ApiError("Use the ShuleOS template and keep the Learners sheet and column headings.");
   }
 
   const rows: LearnerRow[] = [];
   learnerRows.forEach((cells, index) => {
     const number = index + 2;
-    if (cells.slice(headers.length).some(value => value !== null)) throw new Error(`Row ${number} contains extra columns.`);
+    if (cells.slice(headers.length).some(value => value !== null)) throw new ApiError(`Row ${number} contains extra columns.`);
     const fields = headers.map((header, index) => {
       const value = cells[index];
       if (value instanceof Date && header === "date_of_birth") return value.toISOString().slice(0, 10);
       if (value == null) return "";
       if (typeof value !== "string" && typeof value !== "number") {
-        throw new Error(`Row ${number}: enter a plain value in ${header}.`);
+        throw new ApiError(`Row ${number}: enter a plain value in ${header}.`);
       }
       return String(value).trim();
     });
     if (fields.every(value => !value)) return;
-    if (rows.length >= 500) throw new Error("Use at most 500 learners per workbook.");
+    if (rows.length >= 500) throw new ApiError("Use at most 500 learners per workbook.");
     rows.push({ row: number, ...Object.fromEntries(headers.map((header, index) => [header, fields[index]])) } as LearnerRow);
   });
-  if (!rows.length) throw new Error("The Learners sheet has no learner rows.");
+  if (!rows.length) throw new ApiError("The Learners sheet has no learner rows.");
   return rows;
 }
 
@@ -70,13 +76,13 @@ export function BulkLearnerImport({ classes, isCurrentSchool }: {
     try {
       const file = fields.get("workbook");
       const stream_id = String(fields.get("stream_id"));
-      if (!batch && !(file instanceof File && file.size > 0)) throw new Error("Choose a completed Excel workbook.");
+      if (!batch && !(file instanceof File && file.size > 0)) throw new ApiError("Choose a completed Excel workbook.");
       const payload = batch ?? { stream_id, rows: await readWorkbook(file as File) };
       if (!isCurrentSchool()) return;
-      if (!classes.some(choice => choice.id === payload.stream_id)) throw new Error("Choose one of your assigned classes.");
+      if (!classes.some(choice => choice.id === payload.stream_id)) throw new ApiError("Choose one of your assigned classes.");
       const { data } = await apiClient.post(endpoint, { ...payload, preview: !batch });
       if (!isCurrentSchool()) return;
-      if (data.success !== true || data.data?.count !== payload.rows.length) throw new Error("The import response could not be confirmed.");
+      if (data.success !== true || data.data?.count !== payload.rows.length) throw new ApiError("The import response could not be confirmed.");
       if (batch) {
         setNotice(`${data.data.count} learners admitted to ${classes.find(choice => choice.id === payload.stream_id)?.label}.`);
         setBatch(null);
@@ -122,7 +128,7 @@ export function BulkLearnerImport({ classes, isCurrentSchool }: {
       </ul>}
       {notice && <p role="status">{notice}</p>}
       <div className="flex gap-2">
-        <Button type="submit" disabled={busy || !classes.length}>{busy ? "Processing…" : batch ? "Confirm import" : "Validate and preview"}</Button>
+        <Button type="submit" disabled={busy || !classes.length}>{busy ? "Processing…" : batch ? "Save all learners" : "Validate and preview"}</Button>
         {batch && <Button type="button" variant="outline" disabled={busy} onClick={() => setBatch(null)}>Back</Button>}
       </div>
     </form>
