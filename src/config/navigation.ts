@@ -4,6 +4,7 @@ import type { AuthUser } from "@/types/auth";
 import type { NavigationItem, NavigationSection } from "@/types/navigation";
 
 const candidates: NavigationItem[] = [
+  { title: "My learners", href: "/workspace/teacher/learners", absolute: true, icon: UsersRound, roles: ["Teacher"], permissions: ["access_teacher_portal"] },
   { title: "Class-teacher appointments", href: "/workspace/admin/school/class-teacher-appointments", absolute: true, icon: School },
   { title: "Admit to my class", href: "/workspace/teacher/admission", absolute: true, icon: GraduationCap, roles: ["Teacher"], permissions: ["access_teacher_portal"] },
   { title: "Learning areas", href: "/workspace/admin/school/learning-areas", absolute: true, icon: BookOpen },
