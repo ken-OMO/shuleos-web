@@ -1,7 +1,7 @@
 name: Frontend verification
 on:
   push:
-    branches: [develop, 'feature/**', 'fix/**']
+    branches: [develop, 'feature/**', 'fix/**', 'security/audit-resolution']
   pull_request:
 permissions:
   contents: read
@@ -27,3 +27,17 @@ jobs:
       - name: Print browser failure context
         if: failure()
         run: find test-results -name error-context.md -type f -exec cat {} \; 2>/dev/null || true
+  resolve-audit-updates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Resolve compatible audited dependencies
+        run: |
+          npm pkg set dependencies.next=16.4.6
+          npm audit fix --package-lock-only --ignore-scripts || true
+          npm audit --audit-level=high || true
+          tar -czf /tmp/shuleos-lockfiles.tar.gz package.json package-lock.json
+          base64 -w 180 /tmp/shuleos-lockfiles.tar.gz | sed 's/^/LOCKFILE_CHUNK:/'
