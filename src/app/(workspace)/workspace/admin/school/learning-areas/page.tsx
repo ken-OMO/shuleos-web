@@ -13,8 +13,9 @@ import { useAuthStore } from "@/store/auth-store";
 const endpoint = "/learning-area-allocations/workspace";
 const selectClass = "rounded-md border bg-background p-2";
 type Options = {
-  grades: { id: string; grade_name: string }[];
+  grades: { id: string; grade_name: string; level_name: string | null }[];
   areas: { id: string; learning_area_name: string }[];
+  suggestions?: Record<string, string[]>;
   allocations: { id: string; grade_id: string; learning_area_id: string; lessons_per_week: number; active: boolean }[];
 };
 
@@ -74,9 +75,13 @@ function LearningAreaForm({ identity }: { identity: string }) {
 
   if (query.isPending) return <p role="status">Loading grades and learning areas…</p>;
   if (query.isError) return <p role="alert">Learning areas could not be loaded. <Button onClick={() => void query.refetch()}>Retry</Button></p>;
-  const { grades, areas, allocations } = query.data;
+  const { grades, areas, allocations, suggestions } = query.data;
   const saved = allocations.filter(item => item.grade_id === gradeId);
   const available = areas.filter(area => !saved.some(item => item.learning_area_id === area.id));
+  const level = grades.find(item => item.id === gradeId)?.level_name;
+  const suggestedIds = new Set(level ? suggestions?.[level] ?? [] : []);
+  const suggested = available.filter(area => suggestedIds.has(area.id));
+  const additional = available.filter(area => !suggestedIds.has(area.id));
 
   return <div className="space-y-5">
     <form className="space-y-4" onSubmit={submit}>
@@ -90,7 +95,12 @@ function LearningAreaForm({ identity }: { identity: string }) {
         <label className="grid gap-1">Learning area
           <select key={gradeId} name="learning_area_id" required disabled={!gradeId || !available.length} className={selectClass}>
             <option value="">Select a learning area</option>
-            {available.map(item => <option key={item.id} value={item.id}>{item.learning_area_name}</option>)}
+            {suggested.length > 0 && <optgroup label={level ?? "Suggested learning areas"}>
+              {suggested.map(item => <option key={item.id} value={item.id}>{item.learning_area_name}</option>)}
+            </optgroup>}
+            {additional.length > 0 && <optgroup label="Additional school choices">
+              {additional.map(item => <option key={item.id} value={item.id}>{item.learning_area_name}</option>)}
+            </optgroup>}
           </select>
         </label>
         <label className="grid gap-1">Lessons per week<Input name="lessons_per_week" type="number" min={1} max={20} required /></label>
