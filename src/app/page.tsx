@@ -1,18 +1,31 @@
 import Link from "next/link";
-import { ArrowRight, Blocks, Braces, GraduationCap, Layers3, MoonStar, ShieldCheck, Sparkles } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 
-const foundations = [
-  { icon: ShieldCheck, title: "Secure by foundation", body: "SSR-aware authentication boundaries, normalized API errors and explicit route guards." },
-  { icon: Layers3, title: "Built to scale", body: "Permission-aware navigation, reusable layouts and one central service boundary." },
-  { icon: Sparkles, title: "Designed for focus", body: "Accessible themes, clear hierarchy and calm enterprise-grade visual language." },
-];
-
 export default function Home() {
-  return <main className="relative min-h-screen overflow-hidden"><div aria-hidden="true" className="absolute inset-x-0 top-0 -z-10 h-[36rem] bg-[radial-gradient(circle_at_20%_10%,color-mix(in_oklch,var(--primary)_18%,transparent),transparent_35%),radial-gradient(circle_at_80%_20%,color-mix(in_oklch,var(--chart-2)_15%,transparent),transparent_30%)]" /><nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8" aria-label="Home navigation"><Link href="/" className="flex items-center gap-3 font-bold"><span className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20"><GraduationCap className="size-5" /></span><span>ShuleOS</span></Link><div className="flex items-center gap-2"><Button nativeButton={false} render={<Link href="/design-system"  />} variant="ghost" className="hidden sm:inline-flex">Design system</Button><ThemeToggle /></div></nav><section className="mx-auto grid max-w-7xl items-center gap-14 px-5 pb-20 pt-16 sm:px-8 lg:grid-cols-[1.1fr_.9fr] lg:py-28"><div><Badge variant="outline" className="mb-6 gap-2 border-primary/20 bg-primary/5 text-primary"><Blocks className="size-3.5" />Frontend foundation Â· Phase 1</Badge><h1 className="max-w-3xl text-4xl font-bold tracking-[-0.04em] sm:text-6xl lg:text-7xl">One calm workspace for the whole school.</h1><p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">ShuleOS is a modern school operating system for teaching, learning, administration and communicationâ€”now with a frontend foundation built for every role.</p><div className="mt-8 flex flex-col gap-3 sm:flex-row"><Button nativeButton={false} size="lg" render={<Link href="/preview"  />}>Explore the shell <ArrowRight /></Button><Button nativeButton={false} size="lg" variant="outline" render={<Link href="/design-system"  />}>View design system</Button></div><div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted-foreground"><span className="flex items-center gap-2"><Braces className="size-4 text-primary" />Next.js 16 + React 19</span><span className="flex items-center gap-2"><MoonStar className="size-4 text-primary" />Accessible light & dark themes</span></div></div><Card className="overflow-hidden border-primary/10 bg-card/80 backdrop-blur-xl"><CardContent className="p-3"><div className="rounded-xl border bg-muted/45 p-5"><div className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-destructive/70" /><span className="size-2.5 rounded-full bg-amber-400" /><span className="size-2.5 rounded-full bg-emerald-500" /><span className="ml-3 text-xs text-muted-foreground">foundation.shuleos.local</span></div><div className="mt-8 grid gap-3 sm:grid-cols-2"><PreviewMetric label="Learners" value="1,248" accent="bg-primary" /><PreviewMetric label="Attendance" value="96.4%" accent="bg-emerald-500" /><PreviewMetric label="Lessons today" value="42" accent="bg-violet-500" /><PreviewMetric label="Pending approvals" value="7" accent="bg-amber-500" /></div><div className="mt-3 rounded-xl border bg-card p-4"><div className="mb-4 flex items-center justify-between"><p className="text-sm font-semibold">Foundation readiness</p><Badge variant="success">Ready</Badge></div><div className="space-y-3">{["Providers and theme", "API and authentication", "Responsive application shell"].map((item) => <div key={item} className="flex items-center gap-3 text-sm"><span className="size-2 rounded-full bg-emerald-500" />{item}</div>)}</div></div></div></CardContent></Card></section><section className="border-y bg-card/50"><div className="mx-auto grid max-w-7xl gap-5 px-5 py-16 sm:px-8 md:grid-cols-3">{foundations.map((item) => <article key={item.title} className="rounded-2xl border bg-card p-6"><span className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary"><item.icon className="size-5" /></span><h2 className="mt-5 font-semibold">{item.title}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{item.body}</p></article>)}</div></section><footer className="mx-auto flex max-w-7xl flex-col gap-2 px-5 py-10 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-8"><p>ShuleOS frontend foundation</p><p>No live school data is displayed in this preview.</p></footer></main>;
+  return (
+    <main className="min-h-screen">
+      <nav aria-label="Home navigation" className="border-b border-sidebar-border bg-sidebar text-sidebar-foreground">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
+          <Link href="/" className="flex items-center gap-3 font-bold">
+            <span className="grid size-10 place-items-center rounded-xl bg-brass text-walnut"><GraduationCap className="size-5" /></span>
+            ShuleOS
+          </Link>
+          <div className="text-brass"><ThemeToggle /></div>
+        </div>
+      </nav>
+      <section className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
+        <div className="border-l-4 border-brass pl-5 sm:pl-8">
+          <h1 className="max-w-3xl text-4xl font-bold tracking-tight sm:text-6xl">The Intelligent School Operating System</h1>
+          <p className="mt-5 text-lg text-muted-foreground">Less paperwork. More teaching. Better learning.</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Button nativeButton={false} render={<Link href="/login" />}>Sign in</Button>
+            <Button nativeButton={false} variant="outline" render={<Link href="/register-school" />}>Register your school</Button>
+            <Button nativeButton={false} variant="ghost" className="text-primary" render={<Link href="/preview" />}>Explore teacher preview</Button>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
 }
-
-function PreviewMetric({ label, value, accent }: { label: string; value: string; accent: string }) { return <div className="rounded-xl border bg-card p-4"><span className={`mb-3 block h-1 w-8 rounded-full ${accent}`} /><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 text-xl font-bold">{value}</p></div>; }

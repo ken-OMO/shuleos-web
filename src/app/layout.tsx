@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     template: `%s · ${process.env.NEXT_PUBLIC_APP_NAME ?? "ShuleOS"}`,
   },
   description:
-    "Modern school operating system for teaching, learning, administration and communication.",
+    "The Intelligent School Operating System. Less paperwork. More teaching. Better learning.",
 };
 
 export default function RootLayout({

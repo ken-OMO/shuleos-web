@@ -38,8 +38,8 @@ export function ActivationPasswordFields({ password, confirmation, onPasswordCha
     </label>
     <ul id="activation-password-checks" aria-live="polite" aria-atomic="true" className="space-y-2 text-sm">
       {rules.map((rule) => <li key={rule.label} className="flex items-center gap-2">
-        <span aria-hidden="true" className={`size-2.5 shrink-0 rounded-full ${rule.met ? "bg-green-500" : "bg-red-500"}`} />
-        <span>{rule.label}: <span className={rule.met ? "text-green-500" : "text-red-500"}>{rule.met ? "Met" : "Not met"}</span></span>
+        <span aria-hidden="true" className={`size-2.5 shrink-0 rounded-full ${rule.met ? "bg-success" : "bg-destructive"}`} />
+        <span>{rule.label}: <span className={rule.met ? "text-success" : "text-destructive"}>{rule.met ? "Met" : "Not met"}</span></span>
       </li>)}
     </ul>
   </div>;
